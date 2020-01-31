@@ -1,0 +1,62 @@
+﻿<Window x:Class="Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard.SimpleOptimiserSettings"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard"
+        mc:Ignorable="d"
+        Title="SimpleOptimiserSettings" Height="400" Width="250">
+
+    <Window.DataContext>
+        <local:SimpleOptimiserVM/>
+    </Window.DataContext>
+
+    <Grid>
+        <StackPanel HorizontalAlignment="Center"
+                  VerticalAlignment="Center">
+            <CheckBox Content="Test on ticks"
+                      IsChecked="{Binding IsTickTest}"/>
+            <CheckBox Content="Replace real dates to setted"
+                      IsChecked="{Binding ReplaceDates}"/>
+            <CheckBox Content="Use different shift for ticks test"
+                      IsChecked="{Binding IsDifferentShiftForTicks}"/>
+            <StackPanel>
+                <WrapPanel>
+                    <Label Content="Param Name"/>
+                    <TextBox Width="150"
+                             HorizontalAlignment="Left"
+                             Text="{Binding ShiftAndComissionName}"/>
+                </WrapPanel>
+                <WrapPanel>
+                    <Label Content="Param Value"/>
+                    <TextBox Width="150"
+                             HorizontalAlignment="Left"
+                             Text="{Binding ShiftAndComission}"/>
+                </WrapPanel>
+
+                <Button Content="Add" Command="{Binding Add}"/>
+                <ListView Height="200"
+                          ItemsSource="{Binding NewShiftAndComission}">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Name"
+                                            Width="100"
+                                            DisplayMemberBinding="{Binding Name}"/>
+                            <GridViewColumn Header="Value"
+                                            Width="70"
+                                            DisplayMemberBinding="{Binding Value}"/>
+                            <GridViewColumn Header="Delete">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="Delete"
+                                                Command="{Binding Delete}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

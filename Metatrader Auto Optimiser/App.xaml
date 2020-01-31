@@ -1,0 +1,36 @@
+﻿<Application x:Class="Metatrader_Auto_Optimiser.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Metatrader_Auto_Optimiser"
+             StartupUri="AutoOptimiser.xaml">
+    <Application.Resources>
+
+        <Style TargetType="{x:Type local:AutoOptimiser}">
+            <Setter Property="Background" Value="WhiteSmoke"/>
+        </Style>
+
+        <Style TargetType="GridSplitter">
+            <Setter Property="Background" Value="Black"/>
+        </Style>
+
+        <!--Задаем высоту выпадающих списков-->
+        <Style TargetType="ComboBox">
+            <Setter Property="Height" Value="22"/>
+        </Style>
+
+        <!--Задаем высоту календарей-->
+        <Style TargetType="DatePicker">
+            <Setter Property="Height" Value="22"/>
+        </Style>
+
+        <!--Задаем высоту текст боксов-->
+        <Style TargetType="TextBox">
+            <Setter Property="Height" Value="22"/>
+        </Style>
+
+        <!--Задаем высоту кнопок-->
+        <Style TargetType="Button">
+            <Setter Property="Height" Value="22"/>
+        </Style>
+    </Application.Resources>
+</Application>

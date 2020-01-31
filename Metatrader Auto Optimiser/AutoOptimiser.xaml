@@ -1,0 +1,828 @@
+﻿<Window x:Class="Metatrader_Auto_Optimiser.AutoOptimiser"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Metatrader_Auto_Optimiser.View_Model"
+        xmlns:v="clr-namespace:Metatrader_Auto_Optimiser.View"
+        mc:Ignorable="d"
+        Title="Auto Optimiser" Height="500" Width="1200"
+        MinHeight="500" MinWidth="1200">
+
+    <Window.DataContext>
+        <vm:AutoOptimiserVM/>
+    </Window.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition/>
+            <RowDefinition Height="25"/>
+        </Grid.RowDefinitions>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <WrapPanel Margin="2">
+                <Label Content="Optimisation:"/>
+                <ComboBox Width="200"
+                          ItemsSource="{Binding SelectedOptimisationNames,UpdateSourceTrigger=PropertyChanged}"
+                          SelectedItem="{Binding SelectedOptimisation}"
+                          SelectedIndex="0"
+                          IsEnabled="{Binding EnableMainTogles, UpdateSourceTrigger=PropertyChanged}"/>
+                <Button Content="Load" 
+                        Margin="2,0,0,0"
+                        Width="34"
+                        Command="{Binding LoadResults}"
+                        IsEnabled="{Binding EnableMainTogles, UpdateSourceTrigger=PropertyChanged}"/>
+            </WrapPanel>
+
+            <WrapPanel HorizontalAlignment="Right" 
+                       Margin="2"
+                       Grid.Column="1">
+                <Label Content="Terminal:"/>
+                <ComboBox Width="200"
+                          SelectedIndex="{Binding SelectedTerminalIndex}"
+                          ItemsSource="{Binding Terminals,UpdateSourceTrigger=LostFocus}"
+                          IsEnabled="{Binding EnableMainTogles, UpdateSourceTrigger=PropertyChanged}"/>
+            </WrapPanel>
+        </Grid>
+
+        <TabControl Grid.Row="1"
+                    TabStripPlacement="Right">
+            <TabItem Header="Settings">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30"/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="100"/>
+                        </Grid.ColumnDefinitions>
+
+                        <WrapPanel HorizontalAlignment="Left"
+                                   VerticalAlignment="Bottom">
+                            <Label Content="Select Optimiser:"/>
+                            <ComboBox Width="150"
+                                      IsEnabled="{Binding EnableMainTogles, UpdateSourceTrigger=PropertyChanged}"
+                                      ItemsSource="{Binding Optimisers}"
+                                      SelectedIndex="{Binding SelectedOptimiserIndex}"/>
+                            <Button Content="GUI"
+                                    Command="{Binding ShowOptimiserGUI}"
+                                    IsEnabled="{Binding EnableMainTogles, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Label Content="Directory prefix:"/>
+                            <TextBox Width="150"
+                                     IsEnabled="{Binding EnableMainTogles, UpdateSourceTrigger=PropertyChanged}"
+                                     Text="{Binding DirPrefix}"/>
+                            <ComboBox Width="100" 
+                                      Margin="2,0,0,0"
+                                      SelectedIndex="0"
+                                      ItemsSource="{Binding FileFillingType}"
+                                      IsEnabled="{Binding EnableMainTogles, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedItem="{Binding FileWritingMode}"/>
+                            <Label Content="Asset name:"/>
+                            <TextBox Width="100"
+                                     IsEnabled="{Binding EnableMainTogles, UpdateSourceTrigger=PropertyChanged}"
+                                     Text="{Binding AssetName}"/>
+                            <Button Content="Update (*.set) file"
+                                    Margin="2,0,0,0"
+                                    IsEnabled="{Binding EnableMainTogles}"
+                                    Command="{Binding UpdateSetFile}"/>
+                        </WrapPanel>
+                        <Button Content="Start/Stop"
+                                Grid.Column="2"
+                                Margin="2"
+                                Command="{Binding StartStopOptimisation}"/>
+
+                    </Grid>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="400"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ListView ItemsSource="{Binding OptimiserSettings}"
+                                  IsEnabled="{Binding EnableMainTogles, UpdateSourceTrigger=PropertyChanged}">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Param"
+                                                    Width="200"
+                                                    DisplayMemberBinding="{Binding Name}"/>
+                                    <GridViewColumn Header="Value"
+                                                    Width="200">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ComboBox ItemsSource="{Binding Params}"
+                                                          SelectedIndex="{Binding SelectedIndex}"
+                                                          Width="150"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+
+                        <TabControl Grid.Column="1">
+                            <TabItem Header="Sorter">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="30"/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition Width="50"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <ComboBox ItemsSource="{Binding SortBy}"
+                                                  SelectedIndex="{Binding SelectedSorter}"/>
+                                        <Button Grid.Column="1"
+                                                Content="Add"
+                                                Margin="2,0,0,0"
+                                                Command="{Binding AddSorter}"/>
+
+                                    </Grid>
+                                    <ListView Grid.Row="1"
+                                              ItemsSource="{Binding SorterItems}">
+                                        <ListView.View>
+                                            <GridView>
+                                                <GridViewColumn Header="Coef"
+                                                                Width="100"
+                                                                DisplayMemberBinding="{Binding Sorter}"/>
+                                                <GridViewColumn Width="60">
+                                                    <GridViewColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <Button Content="Delete"
+                                                                    HorizontalAlignment="Center"
+                                                                    Command="{Binding Delete}"/>
+                                                        </DataTemplate>
+                                                    </GridViewColumn.CellTemplate>
+                                                </GridViewColumn>
+                                            </GridView>
+                                        </ListView.View>
+                                    </ListView>
+                                </Grid>
+                            </TabItem>
+                            <TabItem Header="Filter">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="50"/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+
+                                    <Grid VerticalAlignment="Bottom"
+                                          Width="390">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="340"/>
+                                            <ColumnDefinition Width="50"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <WrapPanel Grid.Row="1">
+                                            <StackPanel Width="100">
+                                                <Label Content="Sort by:"/>
+                                                <ComboBox ItemsSource="{Binding SortBy}"
+                                                          SelectedIndex="{Binding SelectedFilter}"/>
+                                            </StackPanel>
+                                            <StackPanel Width="100">
+                                                <Label Content="Compare type:"/>
+                                                <ComboBox ItemsSource="{Binding CompareBy}"
+                                                          SelectedIndex="{Binding SelectedComparer}"/>
+                                            </StackPanel>
+                                            <StackPanel Width="100">
+                                                <Label Content="Value:"/>
+                                                <TextBox Text="{Binding ComparerBorder}"/>
+                                            </StackPanel>
+                                        </WrapPanel>
+
+                                        <Button Content="Add"
+                                                Grid.Column="1"
+                                                VerticalAlignment="Bottom"
+                                                Command="{Binding AddFilter}"/>
+
+                                    </Grid>
+
+                                    <ListView Grid.Row="2"
+                                              Margin="2"
+                                              ItemsSource="{Binding FilterItems}">
+                                        <ListView.View>
+                                            <GridView>
+                                                <GridViewColumn Header="Sort by"
+                                                                Width="80"
+                                                                DisplayMemberBinding="{Binding Sorter}"/>
+                                                <GridViewColumn Header="Compare type" 
+                                                                DisplayMemberBinding="{Binding CompareType}"/>
+                                                <GridViewColumn Header="Value"
+                                                                DisplayMemberBinding="{Binding Border}"/>
+                                                <GridViewColumn Width="60">
+                                                    <GridViewColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <Button Content="Delete"
+                                                                    HorizontalAlignment="Center"
+                                                                    Command="{Binding Delete}"/>
+                                                        </DataTemplate>
+                                                    </GridViewColumn.CellTemplate>
+                                                </GridViewColumn>
+                                            </GridView>
+                                        </ListView.View>
+                                    </ListView>
+
+                                </Grid>
+                            </TabItem>
+                        </TabControl>
+
+                        <GridSplitter VerticalAlignment="Stretch"
+                                                  HorizontalAlignment="Right"
+                                                  Width="2"/>
+                    </Grid>
+
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+
+                        <ListView Grid.Row="2"
+                                  IsEnabled="{Binding EnableMainTogles, UpdateSourceTrigger=PropertyChanged}"
+                                  ItemsSource="{Binding BotParams}">
+                            <ListView.View>
+                                <GridView>
+                                    <!--Признак оптимизируемого поля-->
+                                    <GridViewColumn Width="30">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"
+                                                          IsChecked="{Binding IsOptimize}"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <!--Наименование переменной-->
+                                    <GridViewColumn Header="Variable" 
+                                                            Width="200" 
+                                                            DisplayMemberBinding="{Binding Vriable}"/>
+                                    <!--Значение переменной используемое в тесте-->
+                                    <GridViewColumn Header="Value">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBox Width="100"
+                                                         Text="{Binding Value}"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <!--Старт перебора-->
+                                    <GridViewColumn Header="Start">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBox Width="100"
+                                                         Text="{Binding Start}"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <!--Шаг перебора-->
+                                    <GridViewColumn Header="Step">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBox Width="100"
+                                                         Text="{Binding Step}"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <!--Окончание перебора-->
+                                    <GridViewColumn Header="Stop">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBox  Width="100"
+                                                          Text="{Binding Stop}"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+
+                        <Grid Grid.Column="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="30"/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+
+                            <WrapPanel Margin="2">
+                                <DatePicker SelectedDate="{Binding DateFrom}"/>
+                                <DatePicker Margin="2,0,0,0" 
+                                            SelectedDate="{Binding DateTill}"/>
+                                <ComboBox Width="100"
+                                          ItemsSource="{Binding DateBorderTypes}"
+                                          SelectedIndex="{Binding SelectedDateBorderType}"
+                                          Margin="2,0,0,0"/>
+                                <Button Content="Add" 
+                                        Margin="2,0,0,0"
+                                        Command="{Binding AddDateBorder}"/>
+                                <Button Content="Save / Load"
+                                        Margin="2,0,0,0"
+                                        Command="{Binding SaveOrLoadDates}"/>
+                            </WrapPanel>
+
+                            <ListView Grid.Row="1"
+                                      ItemsSource="{Binding DateBorders}">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="From"
+                                                        Width="100"
+                                                        DisplayMemberBinding="{Binding From}"/>
+                                        <GridViewColumn Header="Till"
+                                                        Width="100"
+                                                        DisplayMemberBinding="{Binding Till}"/>
+                                        <GridViewColumn Header="Pass type"
+                                                        Width="100"
+                                                        DisplayMemberBinding="{Binding BorderType}"/>
+                                        <GridViewColumn Width="60">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="Delete"
+                                                            HorizontalAlignment="Center"
+                                                            Command="{Binding Delete}"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+
+                        </Grid>
+
+                        <GridSplitter VerticalAlignment="Stretch"
+                                      HorizontalAlignment="Right"
+                                      Width="2"/>
+
+                    </Grid>
+
+                    <GridSplitter HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Bottom"
+                                  Height="2"
+                                  Grid.Row="1"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Results">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+
+                    <TabControl>
+                        <TabItem Header="Slected pass">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="30"/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+
+                                <Button Content="Save to (*.csv)"
+                                        Width="100"
+                                        HorizontalAlignment="Left"
+                                        Command="{Binding SaveToCsv}"
+                                        CommandParameter="Selected"/>
+
+                                <TabControl TabStripPlacement="Bottom"
+                                            Grid.Row="2">
+                                    <TabItem Header="Forvard">
+                                        <ListView ItemsSource="{Binding ForwardOptimisations}"
+                                                  SelectedIndex="{Binding SelectedForwardItem}"
+                                                  v:ListViewExtention.DoubleClickCommand="{Binding StartTestForward}">
+                                            <ListView.View>
+                                                <GridView>
+                                                    <GridViewColumn Header="Date From"
+                                                                    DisplayMemberBinding="{Binding From}"/>
+                                                    <GridViewColumn Header="Date Till"
+                                                                    DisplayMemberBinding="{Binding Till}"/>
+                                                    <GridViewColumn Header="Payoff"
+                                                                    DisplayMemberBinding="{Binding Payoff}"/>
+                                                    <GridViewColumn Header="Profit pactor"
+                                                                    DisplayMemberBinding="{Binding ProfitFactor}"/>
+                                                    <GridViewColumn Header="Average Profit Factor"
+                                                                    DisplayMemberBinding="{Binding AverageProfitFactor}"/>
+                                                    <GridViewColumn Header="Recovery factor"
+                                                                    DisplayMemberBinding="{Binding RecoveryFactor}"/>
+                                                    <GridViewColumn Header="Average Recovery Factor"
+                                                                    DisplayMemberBinding="{Binding AverageRecoveryFactor}"/>
+                                                    <GridViewColumn Header="PL"
+                                                                    DisplayMemberBinding="{Binding PL}"/>
+                                                    <GridViewColumn Header="DD"
+                                                                    DisplayMemberBinding="{Binding DD}"/>
+                                                    <GridViewColumn Header="Altman Z score"
+                                                                    DisplayMemberBinding="{Binding AltmanZScore}"/>
+                                                    <GridViewColumn Header="Total trades"
+                                                                    DisplayMemberBinding="{Binding TotalTrades}"/>
+                                                    <GridViewColumn Header="VaR 90"
+                                                                    DisplayMemberBinding="{Binding VaR90}"/>
+                                                    <GridViewColumn Header="VaR 95"
+                                                                    DisplayMemberBinding="{Binding VaR95}"/>
+                                                    <GridViewColumn Header="VaR 99"
+                                                                    DisplayMemberBinding="{Binding VaR99}"/>
+                                                    <GridViewColumn Header="Mx"
+                                                                    DisplayMemberBinding="{Binding Mx}"/>
+                                                    <GridViewColumn Header="Std"
+                                                                    DisplayMemberBinding="{Binding Std}"/>
+                                                </GridView>
+                                            </ListView.View>
+                                        </ListView>
+                                    </TabItem>
+                                    <TabItem Header="History">
+                                        <ListView ItemsSource="{Binding HistoryOptimisations}"
+                                                  SelectedIndex="{Binding SelectedHistoryItem}"
+                                                  v:ListViewExtention.DoubleClickCommand="{Binding StartTestHistory}">
+                                            <ListView.View>
+                                                <GridView>
+                                                    <GridViewColumn Header="Date From"
+                                                                    DisplayMemberBinding="{Binding From}"/>
+                                                    <GridViewColumn Header="Date Till"
+                                                                    DisplayMemberBinding="{Binding Till}"/>
+                                                    <GridViewColumn Header="Payoff"
+                                                                    DisplayMemberBinding="{Binding Payoff}"/>
+                                                    <GridViewColumn Header="Profit pactor"
+                                                                    DisplayMemberBinding="{Binding ProfitFactor}"/>
+                                                    <GridViewColumn Header="Average Profit Factor"
+                                                                    DisplayMemberBinding="{Binding AverageProfitFactor}"/>
+                                                    <GridViewColumn Header="Recovery factor"
+                                                                    DisplayMemberBinding="{Binding RecoveryFactor}"/>
+                                                    <GridViewColumn Header="Average Recovery Factor"
+                                                                    DisplayMemberBinding="{Binding AverageRecoveryFactor}"/>
+                                                    <GridViewColumn Header="PL"
+                                                                    DisplayMemberBinding="{Binding PL}"/>
+                                                    <GridViewColumn Header="DD"
+                                                                    DisplayMemberBinding="{Binding DD}"/>
+                                                    <GridViewColumn Header="Altman Z score"
+                                                                    DisplayMemberBinding="{Binding AltmanZScore}"/>
+                                                    <GridViewColumn Header="Total trades"
+                                                                    DisplayMemberBinding="{Binding TotalTrades}"/>
+                                                    <GridViewColumn Header="VaR 90"
+                                                                    DisplayMemberBinding="{Binding VaR90}"/>
+                                                    <GridViewColumn Header="VaR 95"
+                                                                    DisplayMemberBinding="{Binding VaR95}"/>
+                                                    <GridViewColumn Header="VaR 99"
+                                                                    DisplayMemberBinding="{Binding VaR99}"/>
+                                                    <GridViewColumn Header="Mx"
+                                                                    DisplayMemberBinding="{Binding Mx}"/>
+                                                    <GridViewColumn Header="Std"
+                                                                    DisplayMemberBinding="{Binding Std}"/>
+                                                </GridView>
+                                            </ListView.View>
+                                        </ListView>
+                                    </TabItem>
+                                </TabControl>
+                            </Grid>
+                        </TabItem>
+                        <TabItem Header="Optimisations">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="30"/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+
+                                <WrapPanel HorizontalAlignment="Left"
+                                           VerticalAlignment="Center">
+                                    <Button Content="Save to (*.csv)"
+                                            Width="100"
+                                            Command="{Binding SaveToCsv}"
+                                            CommandParameter="Report"/>
+                                    <Button Content="Sort"
+                                            Margin="5,0,0,0"
+                                            Width="50"
+                                            Command="{Binding SortResults}"/>
+                                    <Button Content="Filter"
+                                            Margin="5,0,0,0"
+                                            Width="50"
+                                            Command="{Binding FilterResults}"/>
+                                </WrapPanel>
+
+                                <WrapPanel HorizontalAlignment="Right" 
+                                           Margin="2">
+                                    <Label Content="Optimisation dates:"/>
+                                    <ComboBox Width="200"
+                                              SelectedIndex="{Binding SelectedReportDateBorder}"
+                                              ItemsSource="{Binding ReportDateBorders}"/>
+                                </WrapPanel>
+                                <Grid Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="400"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <ListView ItemsSource="{Binding AllOptimisations}"
+                                              SelectedIndex="{Binding SelecterReportItem}"
+                                              v:ListViewExtention.DoubleClickCommand="{Binding StartTestReport}">
+                                        <ListView.View>
+                                            <GridView>
+                                                <GridViewColumn Header="Date From"
+                                                                DisplayMemberBinding="{Binding From}"/>
+                                                <GridViewColumn Header="Date Till"
+                                                                DisplayMemberBinding="{Binding Till}"/>
+                                                <GridViewColumn Header="Sort by"
+                                                                DisplayMemberBinding="{Binding SortBy}"/>
+                                                <GridViewColumn Header="Payoff"
+                                                                DisplayMemberBinding="{Binding Payoff}"/>
+                                                <GridViewColumn Header="Profit pactor"
+                                                                DisplayMemberBinding="{Binding ProfitFactor}"/>
+                                                <GridViewColumn Header="Average Profit Factor"
+                                                                    DisplayMemberBinding="{Binding AverageProfitFactor}"/>
+                                                <GridViewColumn Header="Recovery factor"
+                                                                    DisplayMemberBinding="{Binding RecoveryFactor}"/>
+                                                <GridViewColumn Header="Average Recovery Factor"
+                                                                    DisplayMemberBinding="{Binding AverageRecoveryFactor}"/>
+                                                <GridViewColumn Header="PL"
+                                                                DisplayMemberBinding="{Binding PL}"/>
+                                                <GridViewColumn Header="DD"
+                                                                    DisplayMemberBinding="{Binding DD}"/>
+                                                <GridViewColumn Header="Altman Z score"
+                                                                DisplayMemberBinding="{Binding AltmanZScore}"/>
+                                                <GridViewColumn Header="Total trades"
+                                                                DisplayMemberBinding="{Binding TotalTrades}"/>
+                                                <GridViewColumn Header="VaR 90"
+                                                                DisplayMemberBinding="{Binding VaR90}"/>
+                                                <GridViewColumn Header="VaR 95"
+                                                                DisplayMemberBinding="{Binding VaR95}"/>
+                                                <GridViewColumn Header="VaR 99"
+                                                                DisplayMemberBinding="{Binding VaR99}"/>
+                                                <GridViewColumn Header="Mx"
+                                                                DisplayMemberBinding="{Binding Mx}"/>
+                                                <GridViewColumn Header="Std"
+                                                                DisplayMemberBinding="{Binding Std}"/>
+                                            </GridView>
+                                        </ListView.View>
+                                    </ListView>
+
+                                    <TabControl Grid.Column="1">
+                                        <TabItem Header="Sorter">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="30"/>
+                                                    <RowDefinition/>
+                                                </Grid.RowDefinitions>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition/>
+                                                        <ColumnDefinition Width="50"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <ComboBox ItemsSource="{Binding SortBy}"
+                                                              SelectedIndex="{Binding SelectedSorter_Results}"/>
+                                                    <Button Grid.Column="1"
+                                                            Content="Add"
+                                                            Margin="2,0,0,0"                                                            
+                                                            Command="{Binding AddSorter_Results}"/>
+
+                                                </Grid>
+                                                <ListView Grid.Row="1"                                                          
+                                                          ItemsSource="{Binding SorterItems}">
+                                                    <ListView.View>
+                                                        <GridView>
+                                                            <GridViewColumn Header="Coef"
+                                                                Width="100"
+                                                                DisplayMemberBinding="{Binding Sorter}"/>
+                                                            <GridViewColumn Width="60">
+                                                                <GridViewColumn.CellTemplate>
+                                                                    <DataTemplate>
+                                                                        <Button Content="Delete"
+                                                                    HorizontalAlignment="Center"
+                                                                    Command="{Binding Delete}"/>
+                                                                    </DataTemplate>
+                                                                </GridViewColumn.CellTemplate>
+                                                            </GridViewColumn>
+                                                        </GridView>
+                                                    </ListView.View>
+                                                </ListView>
+                                            </Grid>
+                                        </TabItem>
+                                        <TabItem Header="Filter">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="50"/>
+                                                    <RowDefinition/>
+                                                </Grid.RowDefinitions>
+
+                                                <Grid VerticalAlignment="Bottom"
+                                                      Width="390">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="340"/>
+                                                        <ColumnDefinition Width="50"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <WrapPanel Grid.Row="1">
+                                                        <StackPanel Width="100">
+                                                            <Label Content="Sort by:"/>
+                                                            <ComboBox ItemsSource="{Binding SortBy}"
+                                                                      SelectedIndex="{Binding SelectedFilter_Result}"/>
+                                                        </StackPanel>
+                                                        <StackPanel Width="100">
+                                                            <Label Content="Compare type:"/>
+                                                            <ComboBox ItemsSource="{Binding CompareBy}"
+                                                                      SelectedIndex="{Binding SelectedComparer_Result}"/>
+                                                        </StackPanel>
+                                                        <StackPanel Width="100">
+                                                            <Label Content="Value:"/>
+                                                            <TextBox Text="{Binding ComparerBorder_Result}"/>
+                                                        </StackPanel>
+                                                    </WrapPanel>
+
+                                                    <Button Content="Add"
+                                                            Grid.Column="1"
+                                                            VerticalAlignment="Bottom"
+                                                            Command="{Binding AddFilter_Result}"/>
+
+                                                </Grid>
+
+                                                <ListView Grid.Row="2"
+                                                          Margin="2"                                                          
+                                                          ItemsSource="{Binding FilterItems}">
+                                                    <ListView.View>
+                                                        <GridView>
+                                                            <GridViewColumn Header="Sort by"
+                                                                Width="80"
+                                                                DisplayMemberBinding="{Binding Sorter}"/>
+                                                            <GridViewColumn Header="Compare type" 
+                                                                DisplayMemberBinding="{Binding CompareType}"/>
+                                                            <GridViewColumn Header="Value"
+                                                                DisplayMemberBinding="{Binding Border}"/>
+                                                            <GridViewColumn Width="60">
+                                                                <GridViewColumn.CellTemplate>
+                                                                    <DataTemplate>
+                                                                        <Button Content="Delete"
+                                                                    HorizontalAlignment="Center"
+                                                                    Command="{Binding Delete}"/>
+                                                                    </DataTemplate>
+                                                                </GridViewColumn.CellTemplate>
+                                                            </GridViewColumn>
+                                                        </GridView>
+                                                    </ListView.View>
+                                                </ListView>
+
+                                            </Grid>
+                                        </TabItem>
+                                    </TabControl>
+
+                                    <GridSplitter VerticalAlignment="Stretch"
+                                                  HorizontalAlignment="Right"
+                                                  Width="2"/>
+
+                                </Grid>
+
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="30"/>
+                                <RowDefinition Height="80"/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition Width="200"/>
+                                </Grid.ColumnDefinitions>
+
+                                <WrapPanel>
+                                    <Label Content="From:"/>
+                                    <DatePicker SelectedDate="{Binding TestFrom, UpdateSourceTrigger=PropertyChanged}"/>
+                                </WrapPanel>
+                                <WrapPanel Grid.Column="1">
+                                    <Label Content="Till:"/>
+                                    <DatePicker SelectedDate="{Binding TestTill, UpdateSourceTrigger=PropertyChanged}"/>
+                                </WrapPanel>
+
+                            </Grid>
+
+                            <ListView ItemsSource="{Binding OptimiserSettingsForResults_changing}"
+                                      Grid.Row="1">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Param"
+                                                    Width="200"
+                                                    DisplayMemberBinding="{Binding Name}"/>
+                                        <GridViewColumn Header="Value"
+                                                    Width="200">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <ComboBox ItemsSource="{Binding Params, UpdateSourceTrigger=PropertyChanged}"
+                                                          SelectedIndex="{Binding SelectedIndex, UpdateSourceTrigger=PropertyChanged}"
+                                                          Width="150"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+
+                            <ListView Grid.Row="2"
+                                      ItemsSource="{Binding OptimiserSettingsForResults_fixed, UpdateSourceTrigger=PropertyChanged}">
+                                <ListView.Resources>
+                                    <Style TargetType="GridViewColumnHeader">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </Style>
+                                </ListView.Resources>
+
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Width="200"
+                                                        DisplayMemberBinding="{Binding Key}"/>
+                                        <GridViewColumn Width="200"
+                                                        DisplayMemberBinding="{Binding Value}"/>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Grid>
+
+                        <GridSplitter Width="2" VerticalAlignment="Stretch"
+                                      HorizontalAlignment="Right"/>
+                        <TabControl Grid.Column="1"
+                                    TabStripPlacement="Bottom">
+                            <TabItem Header="Bot params">
+                                <ListView ItemsSource="{Binding SelectedBotParams}">
+                                    <ListView.View>
+                                        <GridView>
+                                            <GridViewColumn Header="Name"
+                                                            Width="200"
+                                                            DisplayMemberBinding="{Binding Key}"/>
+                                            <GridViewColumn Header="Value"
+                                                            Width="100"
+                                                            DisplayMemberBinding="{Binding Value}"/>
+                                        </GridView>
+                                    </ListView.View>
+                                </ListView>
+                            </TabItem>
+                            <TabItem Header="Daily PL">
+                                <ListView ItemsSource="{Binding TradingDays}">
+                                    <ListView.View>
+                                        <GridView>
+                                            <GridViewColumn Header="Day"
+                                                            DisplayMemberBinding="{Binding Key}"/>
+                                            <GridViewColumn Header="Average Profit"
+                                                            DisplayMemberBinding="{Binding Value.DailyProfit}"/>
+                                            <GridViewColumn Header="Profit Trades"
+                                                            DisplayMemberBinding="{Binding Value.DailyProfitTrades}"/>
+                                            <GridViewColumn Header="Average DD"
+                                                            DisplayMemberBinding="{Binding Value.DailyDD}"/>
+                                            <GridViewColumn Header="DD Trades"
+                                                            DisplayMemberBinding="{Binding Value.DailyDDTrades}"/>
+                                        </GridView>
+                                    </ListView.View>
+                                </ListView>
+                            </TabItem>
+                            <TabItem Header="Max PL/DD">
+                                <ListView ItemsSource="{Binding MaxPLDD}">
+                                    <ListView.View>
+                                        <GridView>
+                                            <GridViewColumn Width="100"
+                                                            DisplayMemberBinding="{Binding Key}"/>
+                                            <GridViewColumn Header="Profit"
+                                                            Width="100"
+                                                            DisplayMemberBinding="{Binding Value.Key}"/>
+                                            <GridViewColumn Header="DD"
+                                                            Width="100"
+                                                            DisplayMemberBinding="{Binding Value.Value}"/>
+                                        </GridView>
+                                    </ListView.View>
+                                </ListView>
+                            </TabItem>
+                        </TabControl>
+
+                    </Grid>
+
+                    <GridSplitter VerticalAlignment="Bottom"
+                                  HorizontalAlignment="Stretch"
+                                  Height="2"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="150"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <Label Content="{Binding Status, UpdateSourceTrigger=PropertyChanged}"/>
+            <ProgressBar Grid.Column="1"
+                         Value="{Binding Progress, UpdateSourceTrigger=PropertyChanged}"
+                         Minimum="0"
+                         Maximum="100"/>
+        </Grid>
+    </Grid>
+
+</Window>
