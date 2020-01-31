@@ -34,9 +34,6 @@ namespace Metatrader_Auto_Optimiser.Model
                                 {
                                     new OptimisationManagers.SimpleForvard.SimpleOptimiserManagerCreator(workingDirectory)
                                 };
-            Optimiser = optimiserCreators[0].Create(new TerminalManager(terminalDirectory.Terminals.ElementAt(0)));
-            Optimiser.ProcessStatus += Optimiser_ProcessStatus;
-            Optimiser.OptimisationProcessFinished += Optimiser_OptimisationProcessFinished;
         }
 
         /// <summary>
@@ -271,14 +268,34 @@ namespace Metatrader_Auto_Optimiser.Model
         /// </summary>
         /// <param name="optimiserName">optimiser manager name</param>
         /// <returns>true if sucsess</returns>
-        public bool ChangeOptimiser(string optimiserName)
+        public bool ChangeOptimiser(string optimiserName, string terminalName)
         {
-            if (Optimiser.IsOptimisationInProcess || Optimiser.TerminalManager.IsActive)
+            if (Optimiser != null &&
+                (Optimiser.IsOptimisationInProcess || Optimiser.TerminalManager.IsActive))
+            {
                 return false;
-            Optimiser.ProcessStatus -= Optimiser_ProcessStatus;
-            Optimiser.OptimisationProcessFinished -= Optimiser_OptimisationProcessFinished;
+            }
 
-            Optimiser = optimiserCreators.First(x => x.Name == optimiserName).Create(Optimiser.TerminalManager);
+            if (Optimiser != null)
+            {
+                Optimiser.ProcessStatus -= Optimiser_ProcessStatus;
+                Optimiser.OptimisationProcessFinished -= Optimiser_OptimisationProcessFinished;
+                Optimiser = optimiserCreators.First(x => x.Name == optimiserName).Create(Optimiser.TerminalManager);
+            }
+            else
+            {
+                try
+                {
+                    Optimiser = optimiserCreators.First(x => x.Name == optimiserName)
+                                                 .Create(new TerminalManager(terminalDirectory.Terminals.First(x => x.Name == terminalName)));
+                }
+                catch (Exception e)
+                {
+                    ThrowException(e.Message);
+                    return false;
+                }
+            }
+
             Optimiser.ProcessStatus += Optimiser_ProcessStatus;
             Optimiser.OptimisationProcessFinished += Optimiser_OptimisationProcessFinished;
             return true;

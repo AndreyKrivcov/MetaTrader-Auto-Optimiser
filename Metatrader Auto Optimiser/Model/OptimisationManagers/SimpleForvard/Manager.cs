@@ -338,6 +338,9 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
             // foreach loop by date time borders
             foreach (var item in optimiserInputData.HistoryBorders)
             {
+                if (!IsOptimisationInProcess)
+                    return;
+
                 // update progress
                 ProcessStatus("Optimisation", step * i);
                 i++;
@@ -400,7 +403,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
                 DateBorders.CompareHistoryToForward(optimiserInputData.HistoryBorders, optimiserInputData.ForwardBorders);
             optimiserInputData.HistoryBorders.ForEach(x =>
             {
-                if(!HistoryToRealHistory.ContainsKey(x))
+                if (!HistoryToRealHistory.ContainsKey(x))
                     HistoryToForward.Remove(x);
             });
 
@@ -428,6 +431,9 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
                 // Set bot params for the test
                 for (int i = 0; i < optimiserInputData.BotParams.Count; i++)
                 {
+
+                    if (!IsOptimisationInProcess)
+                        return false;
                     // Select bot param
                     var paramItem = optimiserInputData.BotParams[i];
 
@@ -496,6 +502,9 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
                 bool isSaveData = false;
                 foreach (var item in HistoryToForward)
                 {
+
+                    if (!IsOptimisationInProcess)
+                        return;
                     ProcessStatus((isForward ? "Forward tests" : "History tests"), step * n);
                     n++;
 

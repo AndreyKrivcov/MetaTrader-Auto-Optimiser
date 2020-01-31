@@ -28,7 +28,7 @@ namespace Metatrader_Auto_Optimiser.Model
         #region Methods
         void LoadSavedOptimisation(string optimisationName);
         bool ChangeTerminal(string terminalName);
-        bool ChangeOptimiser(string optimiserName);
+        bool ChangeOptimiser(string optimiserName, string terminalName = null);
         void StartOptimisation(OptimiserInputData optimiserInputData, bool IsAppend, string dirPrefix);
         void StopOptimisation();
         IEnumerable<ParamsItem> GetBotParams(string botName, bool isUpdate);

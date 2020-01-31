@@ -21,6 +21,12 @@ namespace Metatrader_Auto_Optimiser.View_Model
         /// </summary>
         public AutoOptimiserVM()
         {
+            if (!model.ChangeOptimiser(Optimisers.ElementAt(SelectedOptimiserIndex), Terminals.ElementAt(SelectedTerminalIndex)))
+            {
+                System.Windows.MessageBox.Show("Can`t instance optimiser !");
+                throw new Exception("Can`t instance optimiser !");
+            }
+
             OptimiserSettings = new List<OptimiserSetting>
                                 {
                                     new OptimiserSetting("Available experts", model.Optimiser.TerminalManager.Experts, (string botName)=>
