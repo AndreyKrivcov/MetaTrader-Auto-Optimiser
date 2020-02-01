@@ -14,27 +14,27 @@ using ReportManager;
 namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
 {
     /// <summary>
-    /// Optimiser creator
+    /// Создатель оптимизаторов
     /// </summary>
     class SimpleOptimiserManagerCreator : OptimiserCreator
     {
         /// <summary>
-        /// Creator constructor
+        /// Конструктор
         /// </summary>
-        /// <param name="workingDirectory">working directory</param>
+        /// <param name="workingDirectory">Класс описывающий структуру рабочей директории</param>
         public SimpleOptimiserManagerCreator(WorkingDirectory workingDirectory) : base(Name)
         {
             this.workingDirectory = workingDirectory;
         }
         /// <summary>
-        /// Wirking directory manager
+        /// Менеджер рабочей директории
         /// </summary>
         private readonly WorkingDirectory workingDirectory;
         /// <summary>
-        /// Create method
+        /// Метод порождающий оптимизатор
         /// </summary>
-        /// <param name="terminalManager">Selected terminal</param>
-        /// <returns></returns>
+        /// <param name="terminalManager">Выбранный терминалл</param>
+        /// <returns>Оптимизатор</returns>
         public override IOptimiser Create(TerminalManager terminalManager)
         {
             return new Manager(workingDirectory)
@@ -43,191 +43,276 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
             };
         }
         /// <summary>
-        /// Optimiser name
+        /// Имя оптимизатора
         /// </summary>
         public new static string Name => "Simple forward optimiser";
     }
 
+    /// <summary>
+    /// Single tone Класс - модель в структуре MVVM для графического интерфейса данного оптимизатора
+    /// </summary>
     class SimpleOptimiserM
     {
+        /// <summary>
+        /// Статическое поле храняще инстанцированный объект данного класса
+        /// </summary>
         private static SimpleOptimiserM instance;
+        /// <summary>
+        /// Делаем конструктор приватным что бы нельзя было до него достучаться извне класса
+        /// </summary>
         SimpleOptimiserM() { }
+        /// <summary>
+        /// Статический инстанцирующий метод
+        /// </summary>
+        /// <returns></returns>
         public static SimpleOptimiserM Instance()
         {
+            // Если не было еще не одного инстанцирования - то инстанцируем
             if (instance == null)
                 instance = new SimpleOptimiserM();
 
             return instance;
         }
 
+        /// <summary>
+        /// Настройка - тестировать на тиках ?
+        /// </summary>
         public bool IsTickTest { get; set; } = true;
+        /// <summary>
+        /// Настройка - Заменять реальные даты прозодов оптимизации на указанные в настройках ?
+        /// </summary>
         public bool ReplaceDates { get; set; } = false;
+        /// <summary>
+        /// Настройка - Использовать ли иной сдвиг для тикового теста ?
+        /// </summary>
         public bool IsDifferentShiftForTicks { get; set; } = false;
-
+        /// <summary>
+        /// Новые параметры для сдвигов и комиссий
+        /// </summary>
         public ObservableCollection<ComissionKeeper> NewShiftAndComission = new ObservableCollection<ComissionKeeper>();
     }
 
+    /// <summary>
+    /// Класс - View Model в структуре MVVM для графического интерфейса данного оптимизатора
+    /// </summary>
     class SimpleOptimiserVM : INotifyPropertyChanged
     {
+        /// <summary>
+        /// Конструктор
+        /// </summary>
         public SimpleOptimiserVM()
         {
+            // Коллбек на кнопку добавление иного проскальзования и комиссии
             Add = new RelayCommand((object o) =>
             {
+                // Если уже добавлено жто имя параметра, то не чего не делаем
                 if (NewShiftAndComission.Any(x => x.Name == ShiftAndComissionName))
                     return;
 
+                // Создаем экземпляр объекта описывающего заменяемый параметр и передаем коллбек для удаления заменяемого параметра из списка
                 ComissionKeeper _item = new ComissionKeeper(ShiftAndComissionName, ShiftAndComission, (ComissionKeeper item) =>
                 {
                     NewShiftAndComission.Remove(item);
                 });
 
+                // Добавлем новый параметр
                 NewShiftAndComission.Add(_item);
             });
         }
+        /// <summary>
+        /// Событие изменения какого либо из свойств
+        /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
-
+        /// <summary>
+        /// Инстанцируем модель данных
+        /// </summary>
         private readonly SimpleOptimiserM model = SimpleOptimiserM.Instance();
 
+        /// <summary>
+        /// Геттер / сеттер для параметра IsTickTest в моделе данных
+        /// </summary>
         public bool IsTickTest
         {
             get => model.IsTickTest;
             set => model.IsTickTest = value;
         }
+        /// <summary>
+        /// Геттер / сеттер для параметра ReplaceDates в моделе данных
+        /// </summary>
         public bool ReplaceDates
         {
             get => model.ReplaceDates;
             set => model.ReplaceDates = value;
         }
-
+        /// <summary>
+        /// Геттер / сеттер для параметра IsDifferentShiftForTicks в моделе данных
+        /// </summary
         public bool IsDifferentShiftForTicks
         {
             get => model.IsDifferentShiftForTicks;
             set => model.IsDifferentShiftForTicks = value;
         }
 
+        /// <summary>
+        /// Геттер / Сеттер для имени сдвига цены / комиссии 
+        /// </summary>
         public string ShiftAndComissionName { get; set; }
+        /// <summary>
+        /// Геттер / Сеттер для нового параметрао сдвига цены / комиссии 
+        /// </summary>
         public double ShiftAndComission { get; set; } = 0;
-
+        /// <summary>
+        /// Список новых сдвигов и комиссий
+        /// </summary>
         public ObservableCollection<ComissionKeeper> NewShiftAndComission => model.NewShiftAndComission;
-
+        /// <summary>
+        /// Коллбек добавления нового сдвига / комиссии
+        /// </summary>
         public ICommand Add { get; }
     }
 
+    /// <summary>
+    /// Класс - хранитель конкретной выбранной для замены параметров комиссии или же проскальзования
+    /// </summary>
     class ComissionKeeper
     {
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="Name">Имя параметра</param>
+        /// <param name="Value">Значение параметра</param>
+        /// <param name="action">Коллбек удаления данного эллемента из списка</param>
         public ComissionKeeper(string Name, double Value, Action<ComissionKeeper> action)
         {
             this.Name = Name;
             this.Value = Value;
+
+            // Добавление коллбека
             Delete = new RelayCommand((object o) =>
             {
                 action(this);
             });
         }
 
+        /// <summary>
+        /// Имя параметра
+        /// </summary>
         public string Name { get; }
+        /// <summary>
+        /// Значение параметра
+        /// </summary>
         public double Value { get; }
+        /// <summary>
+        /// Коллбек удаления параметра из списка параметров предоставленных на замену во время тикового теста
+        /// </summary>
         public ICommand Delete { get; }
     }
 
+    /// <summary>
+    /// Класс оптимизатора
+    /// </summary>
     class Manager : IOptimiser
     {
         /// <summary>
-        /// Constructor
+        /// Конструктор
         /// </summary>
-        /// <param name="workingDirectory"></param>
+        /// <param name="workingDirectory">Менеджер рабочих директорий</param>
         public Manager(WorkingDirectory workingDirectory)
         {
             this.workingDirectory = workingDirectory;
         }
         /// <summary>
-        /// Wirking directory manager
+        /// Менеджер рабочих директорий
         /// </summary>
         private readonly WorkingDirectory workingDirectory;
 
         #region Terminal manager
         /// <summary>
-        /// Terminal keeper
+        /// Хранитель терминалла
         /// </summary>
         private TerminalManager _terminal = null;
         /// <summary>
-        /// Terminal getter/setter
+        /// Геттер / Сеттер для добавления терминалла в оптимизатор
         /// </summary>
         public TerminalManager TerminalManager
         {
             get => _terminal;
             set
             {
+                // Если добавляентя null - не чего не делаем
                 if (value == null)
                     return;
+                // Если сейчас оптимизация в процессе - то останавливаем ее перед добавлением нового терминала
                 if (IsOptimisationInProcess)
                     Stop();
 
+                // Если заданный ранее терминалл открыт - закрываем его перед заменой параметра
                 if (_terminal != null && _terminal.IsActive)
                 {
                     _terminal.Close();
                     _terminal.WaitForStop();
                 }
+                // ЗАменяем параметр
                 _terminal = value;
             }
         }
         #endregion
 
         /// <summary>
-        /// Optimisation process status
+        /// Статус процесса оптимизаци
         /// </summary>
         public bool IsOptimisationInProcess { get; protected set; } = false;
 
         /// <summary>
-        /// Optimiser name
+        /// Имя оптимизаторы
         /// </summary>
         public string Name => SimpleOptimiserManagerCreator.Name;
 
         #region Report getters
         /// <summary>
-        /// Raeport for all optimisation periods
+        /// Отчет оптимизаций для всех указанных исторических временных промежутков
         /// </summary>
         public List<OptimisationResult> AllOptimisationResults { get; } = new List<OptimisationResult>();
         /// <summary>
-        /// Forward tests
+        /// Форвард тесты
         /// </summary>
         public List<OptimisationResult> ForwardOptimisations { get; } = new List<OptimisationResult>();
         /// <summary>
-        /// History tests
+        /// Исторические тесты
         /// </summary>
         public List<OptimisationResult> HistoryOptimisations { get; } = new List<OptimisationResult>();
         /// <summary>
-        /// Currency
+        /// Валюта
         /// </summary>
         public string Currency { get; protected set; } = null;
         /// <summary>
-        /// Balance
+        /// Баланс
         /// </summary>
         public double Balance { get; protected set; }
         /// <summary>
-        /// Laverage
+        /// Кредитное плечо
         /// </summary>
         public int Laverage { get; protected set; }
         /// <summary>
-        /// Path tor bot
+        /// Путь к роботу относительно директории с экспертами
         /// </summary>
         public string PathToBot { get; protected set; } = null;
         /// <summary>
-        /// Working directory
+        /// Путь к рабочей директории с изменяемыми файтами
         /// </summary>
         public string OptimiserWorkingDirectory { get; protected set; }
         #endregion
         /// <summary>
-        /// Event that notifis for finishing optimisation process
+        /// Событие окончания процесса оптимизации
         /// </summary>
         public event Action<IOptimiser> OptimisationProcessFinished;
         /// <summary>
-        /// Event that notifis GUI for optimisation process progress
+        /// Событие изменения прогресс бара в основном графическом изтерфейсе из оптимизатора
         /// </summary>
         public event Action<string, double> ProcessStatus;
 
         /// <summary>
-        /// Clear optimisation manager
+        /// Отчистка менеджера оптимизаций
         /// </summary>
         public virtual void ClearOptimiser()
         {
@@ -247,11 +332,17 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
             Laverage = 0;
         }
 
+        /// <summary>
+        /// Класс Модель менеджера оптимизаций 
+        /// </summary>
         readonly SimpleOptimiserM optimiserSettings = SimpleOptimiserM.Instance();
+        /// <summary>
+        /// Окно с настройкамит оптимизатора
+        /// </summary>
         System.Windows.Window settingsGUI = null;
 
         /// <summary>
-        /// Open optimisation manager GUI dialog
+        /// Метод открывающий окно с настройками оптимизатора
         /// </summary>
         public virtual void LoadSettingsWindow()
         {
@@ -264,52 +355,53 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
         }
 
         /// <summary>
-        /// Start optimisation process
+        /// Запуск процесса оптимизации
         /// </summary>
-        /// <param name="optimiserInputData">optimiser and bot settings</param>
-        /// <param name="PathToResultsFile">path to file with report</param>
+        /// <param name="optimiserInputData">Настройки оптимизатора и робота</param>
+        /// <param name="PathToResultsFile">Путь к файлу с отчетом</param>
         public virtual void Start(OptimiserInputData optimiserInputData,
                                   string PathToResultsFile, string dirPrefix)
         {
             OptimiserWorkingDirectory = null;
-            // check if history data and sorting flags availability and optimisation and terminal manager status
+
+            // Проверить Проверить доступность терминала для запуска оптимизации
             if (IsOptimisationInProcess || TerminalManager.IsActive)
                 return;
 
-            // set progress ant togle
+            // Устанавливает статус оптимизации и переключатель
             ProcessStatus("Start optimisation", 0);
             IsOptimisationInProcess = true;
 
-            // check path to result directory availability
+            // Проверить доступность пуки к результатом оптимизации
             if (string.IsNullOrEmpty(PathToResultsFile) ||
                string.IsNullOrWhiteSpace(PathToResultsFile))
             {
                 throw new ArgumentException("Path to results file is null or empty");
             }
 
-            // check history dates availability
+            // Проверить количество границ исторических оптимизаций
             if (optimiserInputData.HistoryBorders.Count == 0)
                 throw new ArgumentException("There are no history optimisations date borders");
 
-            // check sorting flags availability
+            // Проверить флаги сортировки
             if (optimiserInputData.SortingFlags.Count() == 0)
                 throw new ArgumentException("There are no sorting params");
 
-            // Set working directory name
+            // Установка рабочей директории оптимизатора
             OptimiserWorkingDirectory = workingDirectory.GetOptimisationDirectory(optimiserInputData.Symb,
                 Path.GetFileNameWithoutExtension(optimiserInputData.RelativePathToBot), dirPrefix, Name).FullName;
 
-            // Remove existing report file in Common directory
+            // Уладение существующего файла с резальтатами оптимизаций
             if (File.Exists(PathToResultsFile))
                 File.Delete(PathToResultsFile);
 
-            // set optimiser settings
+            // Установка настроек оптимизатора
             PathToBot = optimiserInputData.RelativePathToBot;
             Currency = optimiserInputData.Currency;
             Balance = optimiserInputData.Balance;
             Laverage = optimiserInputData.Laverage;
 
-            // Get (*.set) file path
+            // Получение пути к файлу (*.set) с параметрами эксперта
             string setFile = new FileInfo(Path.Combine(TerminalManager.TerminalChangeableDirectory
                              .GetDirectory("MQL5")
                              .GetDirectory("Profiles")
@@ -318,12 +410,12 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
                              $"{Path.GetFileNameWithoutExtension(optimiserInputData.RelativePathToBot)}.set"))
                              .FullName;
 
-            // step for progress bar
+            // Выбор шага для прогресс бара
             double step = 100.0 / optimiserInputData.HistoryBorders.Count;
-            // progress bar iterretion
+            // Счетчик итераций прогресс бара
             int i = 1;
 
-            // creating (*set) file and save it with vew params
+            // Создание (*set) файла и созранение в него настроек робота
             #region Create (*.set) file
             SetFileManager setFileManager = new SetFileManager(setFile, true)
             {
@@ -332,38 +424,39 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
             setFileManager.SaveParams();
             #endregion
 
-            // Match setted and real history borders 
+            // Сопоставление установленных и реальных границ дат 
             Dictionary<DateBorders, DateBorders> borders = new Dictionary<DateBorders, DateBorders>();
 
-            // foreach loop by date time borders
+            // Цикл по историческим датам оптимизаций
             foreach (var item in optimiserInputData.HistoryBorders)
             {
                 if (!IsOptimisationInProcess)
                     return;
 
-                // update progress
+                // Обновление прогресс бара
                 ProcessStatus("Optimisation", step * i);
                 i++;
 
-                // configure terminal
+                // Конфигурирование терминала перед запуском
                 TerminalManager.Config = GetConfig(optimiserInputData, setFileManager, item);
-                // run terminal with optimisation process and wait for closing
+                // Запуск терминала и ожидание завершения его работы
                 if (TerminalManager.Run())
                 {
-                    // Wait for stop optimisation process
+                    // ожидание завершения работы терминала
                     TerminalManager.WaitForStop();
 
-                    // Read file with report and delete it after reading
+                    // Чтение файла с отчетом и удаление его после прочтения
                     List<OptimisationResult> results = new List<OptimisationResult>();
                     FillInData(results, PathToResultsFile);
-                    // continue if can`t find any report information
+                    // Если не был сформирован файл, то переходим к следующей итеррации
                     if (results.Count == 0)
                         continue;
-
+                    // Если в отчете с результатами оптимизаций было прооптимизировано разное количество временных интервалов 
+                    // хотя был запуск лишь для одного временного интервала - то выкидываем ошибку
                     if (results.Select(x => x.report.DateBorders).Distinct().Count() > 1)
                         throw new Exception("There are more than one date borders inside report file");
 
-                    // Add report data
+                    // Добавление отчета
                     if (!optimiserSettings.ReplaceDates)
                         AllOptimisationResults.AddRange(results);
                     else
@@ -374,31 +467,33 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
                             AllOptimisationResults.Add(x);
                         });
                     }
-                    // Fill in conparation dictionary
+                    // Заполнение словаря сопоставлений дат
                     borders.Add(item, results[0].report.DateBorders);
                 }
             }
 
-            // Set status and start testing on ticks
+            // Установка статуса и сброс прогресс бара, затем запуск тестов
             ProcessStatus("Start tests", 0);
             Tests(borders, optimiserInputData, setFile, PathToResultsFile);
 
-            // Set togle and call event
+            // Переключение статуса оптимизаций на завершенный и вызов соответствующего события
             IsOptimisationInProcess = false;
             OptimisationProcessFinished(this);
         }
         /// <summary>
-        /// Start forward and history tests
+        /// Запуск форвардных и исторических тестов
         /// </summary>
-        /// <param name="HistoryToRealHistory">Maching given history data with real tests data</param>
-        /// <param name="optimiserInputData">optimiser and bot settings</param>
-        /// <param name="setFile">set file name</param>
-        /// <param name="pathToFile">path to file with results</param>
+        /// <param name="HistoryToRealHistory">
+        /// Сопоставление переданных исторических дат тем что были получены путем оптимизаций по переданным датам
+        /// </param>
+        /// <param name="optimiserInputData">Настройки оптимизатора и робота</param>
+        /// <param name="setFile">Имя (*set) файла с настройками</param>
+        /// <param name="pathToFile">Путь к файлу с результатами оптимиазций</param>
         protected void Tests(Dictionary<DateBorders, DateBorders> HistoryToRealHistory,
                              OptimiserInputData optimiserInputData,
                              string setFile, string pathToFile)
         {
-            // Math historydate border with forward
+            // Сопоставление исторических границ - форвардным
             Dictionary<DateBorders, DateBorders> HistoryToForward =
                 DateBorders.CompareHistoryToForward(optimiserInputData.HistoryBorders, optimiserInputData.ForwardBorders);
             optimiserInputData.HistoryBorders.ForEach(x =>
@@ -407,37 +502,37 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
                     HistoryToForward.Remove(x);
             });
 
-            // internal method that start test
+            // Вложенная функция запускающая тесты
             bool Test(DateBorders Border, List<OptimisationResult> optimisationResults, List<OptimisationResult> results)
             {
                 if (Border == null)
                     return false;
 
-                // filter optimisations data
+                // Фильтрация данных оптимизации
                 if (optimiserInputData.CompareData != null &&
                     optimiserInputData.CompareData.Count > 0)
                 {
                     optimisationResults = optimisationResults.FiltreOptimisations(optimiserInputData.CompareData).ToList();
                 }
-                // sort optimisations data or return if data are absent
+                // Сортировка данных оптимизации и возврат из метода если они пусты (могут все отсеяться на этапе фильтрации)
                 if (optimisationResults != null && optimisationResults.Count > 0)
                     optimisationResults = optimisationResults.SortOptimisations(OrderBy.Descending, optimiserInputData.SortingFlags).ToList();
                 else
                     return false;
 
-                // Get best result
+                // Получение лучшего результата оптимизации
                 OptimisationResult result = optimisationResults.First();
 
-                // Set bot params for the test
+                // Установка параметров робота для тестов
                 for (int i = 0; i < optimiserInputData.BotParams.Count; i++)
                 {
 
                     if (!IsOptimisationInProcess)
                         return false;
-                    // Select bot param
+                    // Выбор параметра робота
                     var paramItem = optimiserInputData.BotParams[i];
 
-                    // Set param value if this param contanes amoung bot params from report file item
+                    // Установка значения параметра в случае если таковой присутствует в файле с отчетом оптимизации
                     if (result.report.BotParams.ContainsKey(paramItem.Variable))
                     {
                         var param = result.report.BotParams[paramItem.Variable];
@@ -453,27 +548,27 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
                     }
                 }
 
-                // Save botparams before lanch terminal
+                // Сохранение параметров роботов перед тем как запустиь оптимизации
                 SetFileManager setFileManager = new SetFileManager(setFile, false)
                 {
                     Params = optimiserInputData.BotParams
                 };
                 setFileManager.SaveParams();
 
-                // Get and correct config file
+                // Получение корректного файла конфигураций
                 Config config = GetConfig(optimiserInputData, setFileManager, Border);
                 if (optimiserSettings.IsTickTest)
                     config.Tester.Model = ENUM_Model.Every_tick_based_on_real_ticks;
                 config.Tester.Optimization = ENUM_OptimisationMode.Disabled;
 
-                // Configure terminal and run it
+                // Конфигурация терминала и запуск
                 TerminalManager.Config = config;
                 if (TerminalManager.Run())
                     TerminalManager.WaitForStop();
 
                 return true;
             }
-            // internal method get optimisation surult for the selected date
+            // Вложенная функция получения результатов оптимизации для выбранного диаппазона дат
             List<OptimisationResult> GetOptimisationResult(DateBorders settedHistoryBorder)
             {
                 List<OptimisationResult> optimisationResults =
@@ -492,8 +587,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
 
                 return optimisationResults;
             }
-            // internal method run test loop for the given results
-
+            // Вложенная функция - запускает цикл тестов
             void RunTestLoop(List<OptimisationResult> results, bool isForward)
             {
                 int n = 1;
@@ -531,17 +625,17 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
                 }
             }
 
-            // Run test loop forhistory ans forward test pass
+            // Запуск тестов для исторических и форвардных проходов
             RunTestLoop(HistoryOptimisations, false);
             RunTestLoop(ForwardOptimisations, true);
         }
         /// <summary>
-        /// Generate config file foroptimisation
+        /// Генерация файла конфигурации терминала
         /// </summary>
-        /// <param name="optimiserInputData">Optimiser and bot settings</param>
-        /// <param name="setFileManager">set file manager</param>
-        /// <param name="dateBorders">selected date borders</param>
-        /// <returns></returns>
+        /// <param name="optimiserInputData">Настройки оптимизатора</param>
+        /// <param name="setFileManager">Менеджер (*.set) файлов</param>
+        /// <param name="dateBorders">Выбранный диаппазон дат</param>
+        /// <returns>Сконфигурированный конфигурационный файл</returns>
         protected Config GetConfig(OptimiserInputData optimiserInputData, SetFileManager setFileManager, DateBorders dateBorders)
         {
             Config config = new Config(TerminalManager.TerminalChangeableDirectory
@@ -571,10 +665,10 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
             return config;
         }
         /// <summary>
-        /// Read optimisation report and save in into the given list
+        /// Прочтение отчета оптимизаций и сохранение его в переданный массив
         /// </summary>
-        /// <param name="data">Optimisation data keeper</param>
-        /// <param name="pathToReportFile">path to optimisation report file</param>
+        /// <param name="data">Хранитель результатов оптимизаций</param>
+        /// <param name="pathToReportFile">Путь к файлу с отчетом</param>
         protected void FillInData(List<OptimisationResult> data, string pathToReportFile)
         {
             if (!File.Exists(pathToReportFile))
@@ -601,7 +695,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
             File.Delete(pathToReportFile);
         }
         /// <summary>
-        /// Stop current process and remove all progress
+        /// Остановка текущего процесса оптимизации и отчистка оптимизатора
         /// </summary>
         public virtual void Stop()
         {

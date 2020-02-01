@@ -6,8 +6,16 @@ using System.Xml;
 
 namespace Metatrader_Auto_Optimiser.Model.FileReaders
 {
+    /// <summary>
+    /// Класс читающий и сохраняющий границы оптимизационных дат.
+    /// </summary>
     class DTSourceManager
     {
+        /// <summary>
+        /// Метод получающий список дат (коридоры оптимизаций) для тестера и оптимизатора
+        /// </summary>
+        /// <param name="pathToFile">Путь к файлу предварительно созданному методом SaveBorders данного класса</param>
+        /// <returns>Список оптимизационных проходов</returns>
         public static List<KeyValuePair<DateBorders, OptimisationType>> GetBorders(string pathToFile)
         {
             XmlDocument document = new XmlDocument();
@@ -27,6 +35,11 @@ namespace Metatrader_Auto_Optimiser.Model.FileReaders
 
             return borders;
         }
+        /// <summary>
+        /// Метод созраняющий переданные оптимизационные даты по переданному пути
+        /// </summary>
+        /// <param name="borders">границы оптимизаций</param>
+        /// <param name="pathToFile">Путь для созранения файла</param>
         public static void SaveBorders(IEnumerable<DateBordersItem> borders, string pathToFile)
         {
             using (var xmlWriter = new XmlTextWriter(pathToFile, null))

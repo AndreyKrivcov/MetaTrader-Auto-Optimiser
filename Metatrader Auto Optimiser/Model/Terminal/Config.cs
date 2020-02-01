@@ -5,8 +5,15 @@ using IniFileManager = Metatrader_Auto_Optimiser.Model.FileReaders.IniFileManage
 
 namespace Metatrader_Auto_Optimiser.Model.Terminal
 {
+    /// <summary>
+    /// Класс работы с файлами конфигурации терминала
+    /// </summary>
     class Config
     {
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="path"></param>
         public Config(string path)
         {
             Path = path;
@@ -21,6 +28,9 @@ namespace Metatrader_Auto_Optimiser.Model.Terminal
             Tester = new TesterSection(this);
         }
 
+        /// <summary>
+        /// Метод создающий файл если тот не был создан ранее
+        /// </summary>
         protected virtual void CreateFileIfNotExists()
         {
             if (!File.Exists(Path))
@@ -29,8 +39,16 @@ namespace Metatrader_Auto_Optimiser.Model.Terminal
             }
         }
 
-        public readonly string Path; // путь к файлу
+        /// <summary>
+        /// путь к файлу
+        /// </summary>
+        public readonly string Path;
 
+        /// <summary>
+        /// Создание дубликата файла
+        /// </summary>
+        /// <param name="path">Путь к копии файла</param>
+        /// <returns>Копия текущего файла</returns>
         public virtual Config DublicateFile(string path)
         {
             File.Copy(Path, path, true);
