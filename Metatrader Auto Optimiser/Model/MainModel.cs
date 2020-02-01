@@ -418,6 +418,7 @@ namespace Metatrader_Auto_Optimiser.Model
             }
             #endregion
 
+            AllOptimisationResults.AllOptimisationResults.Clear();
             AllOptimisationResults = new ReportData
             {
                 AllOptimisationResults = new Dictionary<DateBorders, List<OptimisationResult>>()
@@ -507,6 +508,7 @@ namespace Metatrader_Auto_Optimiser.Model
                 {
                     HistoryOptimisations.Clear();
                     ForwardOptimisations.Clear();
+                    AllOptimisationResults.AllOptimisationResults.Clear();
                     AllOptimisationResults = new ReportData
                     {
                         AllOptimisationResults = new Dictionary<DateBorders, List<OptimisationResult>>()
