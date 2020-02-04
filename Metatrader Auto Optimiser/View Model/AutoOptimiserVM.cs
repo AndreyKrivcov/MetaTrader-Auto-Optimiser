@@ -17,16 +17,18 @@ namespace Metatrader_Auto_Optimiser.View_Model
     class AutoOptimiserVM : INotifyPropertyChanged
     {
         /// <summary>
-        /// VM constructor
+        /// Конструктор по умолчанию
         /// </summary>
         public AutoOptimiserVM()
         {
+            // Инстанцируем оптимизатор стоящий первым в списке оптимизаторов
             if (!model.ChangeOptimiser(Optimisers.ElementAt(SelectedOptimiserIndex), Terminals.ElementAt(SelectedTerminalIndex)))
             {
                 System.Windows.MessageBox.Show("Can`t instance optimiser !");
                 throw new Exception("Can`t instance optimiser !");
             }
 
+            // Устанавливаем вариации настроек тестера/оптимизатора на главной вкладке
             OptimiserSettings = new List<OptimiserSetting>
                                 {
                                     new OptimiserSetting("Available experts", model.Optimiser.TerminalManager.Experts, (string botName)=>
@@ -39,6 +41,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
                                     new OptimiserSetting("TF", GetEnumNames<ENUM_Timeframes>()),
                                     new OptimiserSetting("Optimisation model", GetEnumNames<ENUM_Model>())
                                 };
+            // Устанавливаем пустые (изменятся при загрузке результатов оптимизации) настройки тестера / оптимиазтора на вкладке с результатами оптимизации
             OptimiserSettingsForResults_fixed = new ObservableCollection<KeyValuePair<string, string>>
                                 {
                                     new KeyValuePair<string, string>("Symbol", null ),
@@ -54,52 +57,67 @@ namespace Metatrader_Auto_Optimiser.View_Model
                                     new OptimiserSetting("Execution Mode", GetEnumNames<ENUM_ExecutionDelay>()),
                                     new OptimiserSetting("Optimisation model", GetEnumNames<ENUM_Model>())
                                 };
-            // subscribe to events from model
+            // Подписка на события модели данных
             model.OptimisationStoped += Model_OptimisationStoped;
             model.PBUpdate += Model_PBUpdate;
             model.ThrowException += Model_ThrowException;
             model.PropertyChanged += Model_PropertyChanged;
 
-            // Fill in bot params forthe first bot
+            // Заполняем настройки для первого робота из списка
             var settings = OptimiserSettings.Find(x => x.Name == "Available experts");
             SetBotParams(settings.SelectedParam, false);
 
+            // Заполняем коллбеки графического интерфейса
             #region Fill in commands
+            // Коллбек кнопок добавления сортировщика
             AddSorter = new RelayCommand((object o) => _AddSorter(false));
             AddSorter_Results = new RelayCommand((object o) => _AddSorter(true));
 
+            // Коллбек кнопок добавления фильтров
             AddFilter = new RelayCommand((object o) => _AddFilter(false));
             AddFilter_Result = new RelayCommand((object o) => _AddFilter(true));
 
+            // Коллбек кнопки запуска / остановки процесса оптимизации
             StartStopOptimisation = new RelayCommand(_StartStopOptimisation);
+            
+            // Список параметров для ComboBox с выбором типа оптимизации
             DateBorderTypes = GetEnumNames<OptimisationType>();
-
+            // Коллбек добавления границы дат оптимизации
             AddDateBorder = new RelayCommand(_AddDateBorder);
 
+            // Коллбек кнопки загрузки результатов оптимизации
             LoadResults = new RelayCommand((object o) => model.LoadSavedOptimisation(SelectedOptimisation));
 
+            // Коллбек кнопки вызова графического интерфейса оптимизатора
             ShowOptimiserGUI = new RelayCommand((object o) =>
             {
                 try { model.Optimiser.LoadSettingsWindow(); }
                 catch (Exception e) { System.Windows.MessageBox.Show(e.Message); }
             });
 
+            // Коллбек кнопки сортировка загруженных результатов оптимизации
             SortResults = new RelayCommand(_SortResults);
+            // Коллбек кнопки фильтрации загруженных результатов оптимизации
             FilterResults = new RelayCommand(_FilterResults);
+            // Коллбек запуска теста по событию двойного клика на таблице с оптимизациями
             StartTestReport = new RelayCommand((object o) =>
             {
                 _StartTest(model.AllOptimisationResults.AllOptimisationResults[ReportDateBorders[SelectedReportDateBorder]], SelecterReportItem);
             });
+            // Коллбек старта теста по событию двойного клика на таблице с историческими тестами
             StartTestHistory = new RelayCommand((object o) =>
             {
                 _StartTest(model.HistoryOptimisations, SelectedHistoryItem);
             });
+            // Коллбек старта теста по событию двойного клика на таблице с форвардными тестами
             StartTestForward = new RelayCommand((object o) =>
             {
                 _StartTest(model.ForwardOptimisations, SelectedForwardItem);
             });
+            // Коллебук созранения в (*.scv) файл результатов оптимизации
             SaveToCsv = new RelayCommand(_SaveToCsv);
 
+            // Коллбек нажатия на кнопку обновления (*set) файла с настройками выбранного робота
             UpdateSetFile = new RelayCommand((object o) =>
             {
                 System.Threading.Tasks.Task.Run(() =>
@@ -107,15 +125,16 @@ namespace Metatrader_Auto_Optimiser.View_Model
                     SetBotParams(OptimiserSettings.First(x => x.Name == "Available experts").SelectedParam, true);
                 });
             });
+            // Коллбек нажатия на кнопку созранения или же напротив загрузки файла с результатами выбора форвардных и исторических диаппазонов
             SaveOrLoadDates = new RelayCommand(_SaveOrLoadDates);
             #endregion
         }
         /// <summary>
-        /// Destructor
+        /// Деструктор
         /// </summary>
         ~AutoOptimiserVM()
         {
-            // Unsubscribe bot events
+            // Отписка от событий модели данных
             model.OptimisationStoped -= Model_OptimisationStoped;
             model.PBUpdate -= Model_PBUpdate;
             model.ThrowException -= Model_ThrowException;
@@ -139,14 +158,20 @@ namespace Metatrader_Auto_Optimiser.View_Model
         }
         #endregion
 
+        //Коллбек события изменения какого либо свойства модели данных и какиз либо событий модели данных 
         private void Model_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            // Завершился тест или же нужно возобновить доступность кнопок заблокированных при старте оптимизации или же теста
             if (e.PropertyName == "StopTest" ||
                 e.PropertyName == "ResumeEnablingTogle")
             {
+                // переключатель доступности кнопок = true
                 EnableMainTogles = true;
+                // Скидываем статус и прогресс
                 Status = "";
                 Progress = 0;
+
+                // Уведомляем графику о произошедших изменениях
                 dispatcher.Invoke(() =>
                 {
                     OnPropertyChanged("EnableMainTogles");
@@ -155,18 +180,22 @@ namespace Metatrader_Auto_Optimiser.View_Model
                 });
             }
 
+            // Изменился список пройденных оптимизационных проходов
             if (e.PropertyName == "AllOptimisationResults")
             {
                 dispatcher.Invoke(() =>
                 {
+                    // Отчищаем ранее сохраненные проходы оптимизаций и добавляем новые
                     ReportDateBorders.Clear();
                     foreach (var item in model.AllOptimisationResults.AllOptimisationResults.Keys)
                     {
                         ReportDateBorders.Add(item);
                     }
 
+                    // Выбираем самую первую дату
                     SelectedReportDateBorder = 0;
 
+                    // Заполняем фиксированные настройки тестера в соответствии с настройками выгруженных результатов
                     ReplaceBotFixedParam("Expert", model.AllOptimisationResults.Expert);
                     ReplaceBotFixedParam("Deposit", model.AllOptimisationResults.Deposit.ToString());
                     ReplaceBotFixedParam("Currency", model.AllOptimisationResults.Currency);
@@ -174,9 +203,11 @@ namespace Metatrader_Auto_Optimiser.View_Model
                     OnPropertyChanged("OptimiserSettingsForResults_fixed");
                 });
 
+                // Уведомляем о завершении загрузки данных
                 System.Windows.MessageBox.Show("Report params where updated");
             }
 
+            // Либо фильтрация либо сортировка проходов оптимизации
             if (e.PropertyName == "SortedResults" ||
                 e.PropertyName == "FilteredResults")
             {
@@ -186,6 +217,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
                 });
             }
 
+            // Обновлены данные по форвардным оптимизациям
             if (e.PropertyName == "ForwardOptimisations")
             {
                 dispatcher.Invoke(() =>
@@ -198,6 +230,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
                 });
             }
 
+            // Обновлены данные по историческим оптимизациям
             if (e.PropertyName == "HistoryOptimisations")
             {
                 dispatcher.Invoke(() =>
@@ -210,16 +243,17 @@ namespace Metatrader_Auto_Optimiser.View_Model
                 });
             }
 
+            // Созранен (*.csv) файл с результатами оптимизации / тестов
             if (e.PropertyName == "CSV")
             {
                 System.Windows.MessageBox.Show("(*.csv) File saved");
             }
         }
         /// <summary>
-        /// Update status and progress bar from model callback
+        /// Обновление статуса и прогресс бара из события модели
         /// </summary>
-        /// <param name="status">new status</param>
-        /// <param name="value">new value</param>
+        /// <param name="status">новый статус</param>
+        /// <param name="value">новоз значение </param>
         private void Model_PBUpdate(string status, double value)
         {
             Status = status;
@@ -232,15 +266,15 @@ namespace Metatrader_Auto_Optimiser.View_Model
             });
         }
         /// <summary>
-        /// Display exceptions from model
+        /// Отображение текста ошибок из модели данных
         /// </summary>
-        /// <param name="e">exception</param>
+        /// <param name="e">Текст ошибки</param>
         private void Model_ThrowException(string e)
         {
             System.Windows.MessageBox.Show(e);
         }
         /// <summary>
-        /// Callback that calls after finishing optimisation process
+        /// Коллбек вызываемый после завершения процесса оптимизации
         /// </summary>
         private void Model_OptimisationStoped()
         {
@@ -261,34 +295,34 @@ namespace Metatrader_Auto_Optimiser.View_Model
         #endregion
 
         /// <summary>
-        /// Model keeper
+        /// Модель данных
         /// </summary>
         private readonly IMainModel model = MainModelCreator.Model;
         /// <summary>
-        /// Main window dispatcher
+        /// Диспатчер основного окна
         /// </summary>
         private readonly System.Windows.Threading.Dispatcher dispatcher =
             System.Windows.Application.Current.Dispatcher;
 
         #region Status and progress
         /// <summary>
-        /// Progress bar status
+        /// Статус
         /// </summary>
         public string Status { get; set; }
         /// <summary>
-        /// Progress bar progress scale
+        /// Прогресс бар
         /// </summary>
         public double Progress { get; set; } = 0;
         #endregion
 
         /// <summary>
-        /// if this togle false - most important fields are disabling 
+        /// Если этот переключатель = false, то наиболее важные поля - недоступны
         /// </summary>
         public bool EnableMainTogles { get; private set; } = true;
 
         #region Bot params
         /// <summary>
-        /// Callback that fill in bot params and display it
+        /// Коллбек заполняющий параметры робота и отображающий их
         /// </summary>
         /// <param name="botName"></param>
         private void SetBotParams(string botName, bool isUpdateSetFile)
@@ -323,39 +357,39 @@ namespace Metatrader_Auto_Optimiser.View_Model
             });
         }
         /// <summary>
-        /// Data with pobot params
+        /// Настройки оптимизатора
         /// </summary>
         public List<OptimiserSetting> OptimiserSettings { get; }
         public ICommand UpdateSetFile { get; }
         /// <summary>
-        /// Testing asset name
+        /// Имя актива выбранного для тестов / оптимизации
         /// </summary>
         public string AssetName { get; set; }
         #endregion
 
         #region Sorter ans Filter in Settings
         /// <summary>
-        /// Sorterting methods getter
+        /// Список параметров сортировки данных
         /// </summary>
         public IEnumerable<string> SortBy => GetEnumNames<SortBy>();
 
         #region Sorter
         /// <summary>
-        /// Selected sorter for Settings tab
+        /// Выбранный параметр сортировки для вкладки с настройками
         /// </summary>
         public int SelectedSorter { get; set; } = 0;
         /// <summary>
-        /// Selected sorter for Results tab
+        /// Выбранный параметр сортировки для вкладки с результатами оптимизации
         /// </summary>
         public int SelectedSorter_Results { get; set; } = 0;
         /// <summary>
-        /// Selected sorting items
+        /// Отобранные параметры сортировки
         /// </summary>
         public ObservableCollection<SorterItem> SorterItems { get; } = new ObservableCollection<SorterItem>();
         /// <summary>
-        /// Callback for adding sorter to the SorterItems collecton
+        /// Коллбек добавления сортировщика к коллекции SorterItems
         /// </summary>
-        /// <param name="isResults">tab type togle</param>
+        /// <param name="isResults">Переключатель типа вкладок</param>
         private void _AddSorter(bool isResults)
         {
             SortBy value = GetEnum<SortBy>(SortBy.ElementAt((isResults ? SelectedSorter_Results : SelectedSorter)));
@@ -363,69 +397,69 @@ namespace Metatrader_Auto_Optimiser.View_Model
                 SorterItems.Add(new SorterItem(value, _DeleteSorter));
         }
         /// <summary>
-        /// Delete selected sorter type from SorterItems
+        /// Коллбек удаления выбранного способа сортировки из SorterItems
         /// </summary>
-        /// <param name="item">deleting item</param>
+        /// <param name="item">Удаляемый эллемент</param>
         private void _DeleteSorter(object item)
         {
             SorterItems.Remove((SorterItem)item);
         }
         /// <summary>
-        /// Command to add Sorter from settings tab
+        /// Коллбек добавления сортировки из основной вкладке (с настройками)
         /// </summary>
         public ICommand AddSorter { get; }
         /// <summary>
-        /// Command to add sorter from Result tab
+        ///Коллбек добавления сортировщика из вкладки с результатами оптимизации
         /// </summary>
         public ICommand AddSorter_Results { get; }
         #endregion
 
         #region Filter
         /// <summary>
-        /// Selected Filter index for Settings tab
+        /// Выбранный фильтр данных на вкладки Settings
         /// </summary>
         public int SelectedFilter { get; set; } = 0;
         /// <summary>
-        /// Selected filter intex for Results tab
+        /// Выбранный фильтр на вкладке Results
         /// </summary>
         public int SelectedFilter_Result { get; set; } = 0;
 
         /// <summary>
-        /// Compare type array
+        /// Типы сопостовления данных фильтра
         /// </summary>
         public IEnumerable<string> CompareBy => GetEnumNames<CompareType>();
         /// <summary>
-        /// Selected compare type for Settings tab
+        /// Выбранный тип сопостовления на вкладке Settings
         /// </summary>
         public int SelectedComparer { get; set; } = 0;
         /// <summary>
-        /// Selected comparer for Results tab
+        /// Выбранный тип сопоставления на вкладке Results
         /// </summary>
         public int SelectedComparer_Result { get; set; } = 0;
         /// <summary>
-        /// Selected compare border for Settings tab
+        /// Выбранное значение сопостовления на вкладке Settings
         /// </summary>
         public double ComparerBorder { get; set; } = 0;
         /// <summary>
-        /// Selected comparer for Results tab
+        /// Выбранное значение сопостовления на вкладк Results
         /// </summary>
         public double ComparerBorder_Result { get; set; } = 0;
         /// <summary>
-        /// Selected filters with its params
+        ///Выбранные фильтры
         /// </summary>
         public ObservableCollection<FilterItem> FilterItems { get; } = new ObservableCollection<FilterItem>();
         /// <summary>
-        /// Delete selected filter
+        /// Коллбек удаления выбранного фильтра
         /// </summary>
-        /// <param name="item">delitig filter</param>
+        /// <param name="item">Удаляемый фильтр</param>
         private void _DeleteFilter(object item)
         {
             FilterItems.Remove((FilterItem)item);
         }
         /// <summary>
-        /// Add new filter
+        /// Коллбек добавления нового фильтра
         /// </summary>
-        /// <param name="isResult">main tabs togle</param>
+        /// <param name="isResult">Тип вкладки</param>
         private void _AddFilter(bool isResult)
         {
             double value = (isResult ? ComparerBorder_Result : ComparerBorder);
@@ -456,11 +490,11 @@ namespace Metatrader_Auto_Optimiser.View_Model
         }
 
         /// <summary>
-        /// Add filter command keeper for Settings tab
+        /// Коллбек добавления фильтра на вкладке Settings
         /// </summary>
         public ICommand AddFilter { get; }
         /// <summary>
-        /// Add filter command keeper for Results tab
+        /// Коллбек добавления фильтра на вкладке Results
         /// </summary>
         public ICommand AddFilter_Result { get; }
         #endregion
@@ -469,13 +503,11 @@ namespace Metatrader_Auto_Optimiser.View_Model
         #region Start / Stop optimisation
         public string[] FileFillingType { get; } = new[] { "Rewrite", "Append" };
         /// <summary>
-        /// Start optimisation or test (if optimisation is disabled by settings)
+        /// Запуск оптимизации или теста (если режим оптимизации выключен)
         /// </summary>
         /// <param name="o"></param>
         private void _StartStopOptimisation(object o)
         {
-            OptimiserSetting setting = OptimiserSettings.Find(x => x.Name == "Optimisation mode");
-
             if (model.Optimiser.IsOptimisationInProcess)
             {
                 model.StopOptimisation();
@@ -513,18 +545,18 @@ namespace Metatrader_Auto_Optimiser.View_Model
             }
         }
         /// <summary>
-        /// Start optimisation command
+        /// Коллбек для графического интерфейса - запуска оптимизации / теста
         /// </summary>
         public ICommand StartStopOptimisation { get; }
         #endregion
 
         #region Terminal names
         /// <summary>
-        /// Detected terminals
+        /// Список ID терминалов
         /// </summary>
         public IEnumerable<string> Terminals => model.TerminalNames;
         /// <summary>
-        /// Selected terminal
+        /// Выбранный индекс терминала
         /// </summary>
         private int _selectedTerminalIndex = 0;
         public int SelectedTerminalIndex
@@ -550,11 +582,11 @@ namespace Metatrader_Auto_Optimiser.View_Model
 
         #region Optimiser data
         /// <summary>
-        /// Optimisers list
+        /// Список имен оптимизаторов
         /// </summary>
         public IEnumerable<string> Optimisers => model.OptimisatorNames;
         /// <summary>
-        /// Selected optimiser
+        /// Выбранный оптимизатор
         /// </summary>
         public int _selectedOptimiserIndex = 0;
         public int SelectedOptimiserIndex
@@ -567,7 +599,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
                     _selectedOptimiserIndex = 0;
                     return;
                 }
-                // Update optimiser
+                // Обновляем оптимизатор
                 if (model.ChangeOptimiser(Optimisers.ElementAt(value)))
                     _selectedOptimiserIndex = value;
                 else
@@ -575,34 +607,37 @@ namespace Metatrader_Auto_Optimiser.View_Model
             }
         }
         /// <summary>
-        /// Show optimiser GUI command
+        /// Коллбек показа графического интерфейса оптимизатора
         /// </summary>
         public ICommand ShowOptimiserGUI { get; }
         /// <summary>
-        /// File writing mode {Append or Rewrite}
+        /// Режим типа записи в файл
         /// </summary>
         public string FileWritingMode { get; set; }
         /// <summary>
-        /// Directory prefix
+        /// Префикс директории
         /// </summary>
         public string DirPrefix { get; set; } = "";
         #endregion
 
         /// <summary>
-        /// Bot params keeper
+        /// Хранитель параметров робота
         /// </summary>
         public ObservableCollection<BotParamsData> BotParams { get; } = new ObservableCollection<BotParamsData>();
 
         #region DT border
         /// <summary>
-        /// Optimisation date borders collection
+        /// Коллекция дат оптимизации
         /// </summary>
         public ObservableCollection<DateBordersItem> DateBorders { get; } = new ObservableCollection<DateBordersItem>();
         /// <summary>
-        /// Add date borders
+        /// Добавление границ дат
         /// </summary>
         public ICommand AddDateBorder { get; }
-
+        /// <summary>
+        /// Коллбек на загрузку или же созранение дат оптимизации
+        /// </summary>
+        /// <param name="o"></param>
         private void _SaveOrLoadDates(object o)
         {
             if (DateBorders.Count > 0)
@@ -610,7 +645,9 @@ namespace Metatrader_Auto_Optimiser.View_Model
             else
                 LoadDates();
         }
-
+        /// <summary>
+        /// Коллбек созранения датоптимизации
+        /// </summary>
         private void SaveDates()
         {
             using (System.Windows.Forms.SaveFileDialog sfd = new System.Windows.Forms.SaveFileDialog())
@@ -623,6 +660,9 @@ namespace Metatrader_Auto_Optimiser.View_Model
                 }
             }
         }
+        /// <summary>
+        /// Коллбек загрузки дат оптимизации
+        /// </summary>
         private void LoadDates()
         {
             try
@@ -646,26 +686,28 @@ namespace Metatrader_Auto_Optimiser.View_Model
                 System.Windows.MessageBox.Show(e.Message);
             }
         }
-
+        /// <summary>
+        /// Коллбек созранения или же загрузки дат оптимизации
+        /// </summary>
         public ICommand SaveOrLoadDates { get; }
         /// <summary>
-        /// Start date
+        /// Дата начала периода
         /// </summary>
         public DateTime DateFrom { get; set; } = DateTime.Now;
         /// <summary>
-        /// End date
+        ///Дата окончания периода
         /// </summary>
         public DateTime DateTill { get; set; } = DateTime.Now;
         /// <summary>
-        /// Date border types
+        /// Тип диаппазона дат
         /// </summary>
         public IEnumerable<string> DateBorderTypes { get; }
         /// <summary>
-        /// Selected date border
+        /// Выбранный тип диаппазона
         /// </summary>
         public int SelectedDateBorderType { get; set; } = 0;
         /// <summary>
-        /// Add dateborder callback
+        /// Коллбек добавления диаппазона дат
         /// </summary>
         /// <param name="o"></param>
         private void _AddDateBorder(object o)
@@ -685,7 +727,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             }
         }
         /// <summary>
-        /// Delete selected date border
+        /// Удаление выбранной границы дат
         /// </summary>
         /// <param name="item">Deleting item</param>
         private void _DeleteDateBorder(DateBordersItem item)
@@ -696,26 +738,26 @@ namespace Metatrader_Auto_Optimiser.View_Model
 
         #region Results data
         /// <summary>
-        /// Load results command
+        /// Коллбек для кнопки загрузки диаппазона дат
         /// </summary>
         public ICommand LoadResults { get; }
 
         #region Selected saved optimisation
         /// <summary>
-        /// Selected optimisation index
+        /// Имя выбранного оптимизатора
         /// </summary>
         public string SelectedOptimisation { get; set; }
         /// <summary>
-        /// Selected optimisation names
+        /// Доступные оптимизаторы
         /// </summary>
         public IEnumerable<string> SelectedOptimisationNames => model.SavedOptimisations;
         #endregion
 
         /// <summary>
-        /// Start test by double click event
+        /// Запуск теста по событию двойного клика на таблице с оптимизациями
         /// </summary>
-        /// <param name="results">optimisation results</param>
-        /// <param name="ind">selected item index</param>
+        /// <param name="results">РЕзуьтаты оптимизаций</param>
+        /// <param name="ind">Выбранный индекс</param>
         private void _StartTest(List<OptimisationResult> results, int ind)
         {
             try
@@ -746,22 +788,22 @@ namespace Metatrader_Auto_Optimiser.View_Model
             }
         }
         /// <summary>
-        /// Start test from forward table
+        /// Запуск теста из таблицы с форвардными тестами
         /// </summary>
         public ICommand StartTestForward { get; }
         /// <summary>
-        /// Start test from history table
+        ///Запуск теста из таблицы с историческими тестами
         /// </summary>
         public ICommand StartTestHistory { get; }
         /// <summary>
-        /// Start test from report table
+        /// Запуск теста из таблицы с результатамиоптимизации
         /// </summary>
         public ICommand StartTestReport { get; }
 
         /// <summary>
-        /// data into (*.csv) file
+        /// Созранение данных в (*.csv) файл
         /// </summary>
-        /// <param name="o">file indicator (setting from view)</param>
+        /// <param name="o">Идентификтор файла (setting from view)</param>
         private void _SaveToCsv(object o)
         {
             using (System.Windows.Forms.SaveFileDialog sfd = new System.Windows.Forms.SaveFileDialog())
@@ -778,16 +820,16 @@ namespace Metatrader_Auto_Optimiser.View_Model
             }
         }
         /// <summary>
-        /// Save data into (*.csv) file command
+        /// Сохранение данных в (*.csv) файл
         /// </summary>
         public ICommand SaveToCsv { get; }
 
         #region All optimisations table
 
         /// <summary>
-        /// Filling bot params
+        /// Заполнение параметров робота
         /// </summary>
-        /// <param name="result">results</param>
+        /// <param name="result">результаты</param>
         private void FillInBotParams(OptimisationResult result)
         {
             SelectedBotParams.Clear();
@@ -804,7 +846,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             OnPropertyChanged("TestTill");
         }
         /// <summary>
-        /// Fill in daily pl params
+        /// Заполнение параметров дневного PL
         /// </summary>
         /// <param name="result">results</param>
         private void FillInDailyPL(OptimisationResult result)
@@ -824,7 +866,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             OnPropertyChanged("TradingDays");
         }
         /// <summary>
-        /// Fillin daily PL
+        /// Заполнение параметров дневного PL
         /// </summary>
         /// <param name="result">results</param>
         private void FillInMaxPLDD(OptimisationResult result)
@@ -859,12 +901,12 @@ namespace Metatrader_Auto_Optimiser.View_Model
             MaxPLDD[2] = GetItem(MaxPLDD[2].Key);
         }
         /// <summary>
-        /// Bot params keeper
+        /// Хранитель параметров робота
         /// </summary>
         public ObservableCollection<KeyValuePair<string, string>> SelectedBotParams { get; } =
             new ObservableCollection<KeyValuePair<string, string>>();
         /// <summary>
-        /// Trading dais keeper
+        /// Хранитель PL по дням
         /// </summary>
         public ObservableCollection<KeyValuePair<DayOfWeek, DailyPLItem>> TradingDays { get; } = new ObservableCollection<KeyValuePair<DayOfWeek, DailyPLItem>>
         {
@@ -875,7 +917,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             new KeyValuePair<DayOfWeek, DailyPLItem>(DayOfWeek.Friday, null )
         };
         /// <summary>
-        /// Dily PL keeper
+        /// Хранитель PL по дням
         /// </summary>
         public ObservableCollection<KeyValuePair<string, KeyValuePair<string, string>>> MaxPLDD { get; } =
             new ObservableCollection<KeyValuePair<string, KeyValuePair<string, string>>>
@@ -885,7 +927,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             new KeyValuePair<string, KeyValuePair<string,string>>("Consecutive trades",new KeyValuePair<string,string>(null,null))
         };
         /// <summary>
-        /// Selected report item
+        /// Выбранный элемент отчета
         /// </summary>
         private int _selecterReportItem;
         public int SelecterReportItem
@@ -907,7 +949,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             }
         }
         /// <summary>
-        /// Selected forward report
+        /// Выбранный форвард проход
         /// </summary>
         private int _selectedForwardItem;
         public int SelectedForwardItem
@@ -925,7 +967,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             }
         }
         /// <summary>
-        /// Selected hirtory report
+        /// Выбранный исторический проход
         /// </summary>
         private int _selectedHistoryItem;
         public int SelectedHistoryItem
@@ -944,7 +986,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
         }
 
         /// <summary>
-        /// Sort report
+        /// Сортировка отчетов
         /// </summary>
         /// <param name="o"></param>
         private void _SortResults(object o)
@@ -962,7 +1004,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
         public ICommand SortResults { get; }
 
         /// <summary>
-        /// Filter report
+        /// Фильтрация отчетов
         /// </summary>
         /// <param name="o"></param>
         private void _FilterResults(object o)
@@ -983,7 +1025,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
         public ICommand FilterResults { get; }
 
         /// <summary>
-        /// Selected date border for reports
+        /// Выбранная граница дат для отчета
         /// </summary>
         #region Selected optimisation date border index keeper
         private int _selectedReportDateBorder;
@@ -1012,22 +1054,22 @@ namespace Metatrader_Auto_Optimiser.View_Model
         #endregion
 
         /// <summary>
-        /// date borders for All optimisations keeper
+        /// Границы дат всех произведенных оптимизаций
         /// </summary>
         public ObservableCollection<DateBorders> ReportDateBorders { get; } = new ObservableCollection<DateBorders>();
         /// <summary>
-        /// Selected report for "SelectedReportDateBorder"
+        /// Выбранный отчет для "SelectedReportDateBorder"
         /// </summary>
         public ObservableCollection<ReportItem> AllOptimisations { get; } = new ObservableCollection<ReportItem>();
         #endregion
 
         #region Forward and History optimisations table
         /// <summary>
-        /// Selected forward optimisations
+        /// Выбранные форвардные тесты
         /// </summary>
         public ObservableCollection<ReportItem> ForwardOptimisations { get; } = new ObservableCollection<ReportItem>();
         /// <summary>
-        /// Selected history optimisations
+        /// Выбранные исторические тесты
         /// </summary>
         public ObservableCollection<ReportItem> HistoryOptimisations { get; } = new ObservableCollection<ReportItem>();
 
@@ -1035,14 +1077,14 @@ namespace Metatrader_Auto_Optimiser.View_Model
 
         #region  OptimiserSettingsForResults
         /// <summary>
-        /// Fixed optimisation rusults
+        /// Зафиксированные параметры тестера для результатов оптимизации
         /// </summary>
         public ObservableCollection<KeyValuePair<string, string>> OptimiserSettingsForResults_fixed { get; }
         /// <summary>
-        /// Replace fixed bot params
+        /// Замена фиксированных параметров робота
         /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
+        /// <param name="key">Имя параметра</param>
+        /// <param name="value">Значение параметра</param>
         void ReplaceBotFixedParam(string key, string value)
         {
             KeyValuePair<string, string> item = OptimiserSettingsForResults_fixed.First(x => x.Key == key);
@@ -1050,21 +1092,37 @@ namespace Metatrader_Auto_Optimiser.View_Model
             OptimiserSettingsForResults_fixed[ind] = new KeyValuePair<string, string>(key, value);
         }
         /// <summary>
-        /// Changing bot params for test from results tab
+        /// Изменяемые параметры робота для реста для вкладки с результатами
         /// </summary>
         public List<OptimiserSetting> OptimiserSettingsForResults_changing { get; }
-
+        /// <summary>
+        /// Дата начала теста
+        /// </summary>
         public DateTime TestFrom { get; set; } = DateTime.Now;
+        /// <summary>
+        /// Дата завершения теста
+        /// </summary>
         public DateTime TestTill { get; set; } = DateTime.Now;
         #endregion
 
         #endregion
 
         #region EnumToString StringToEnum
+        /// <summary>
+        /// Преобразование имени перечисления в строку
+        /// </summary>
+        /// <typeparam name="T">Тип перечисления</typeparam>
+        /// <param name="param">Одно из значений перечисления</param>
+        /// <returns>Строковое значение перечисления</returns>
         private T GetEnum<T>(string param)
         {
             return (T)Enum.Parse(typeof(T), param.Replace(" ", "_"));
         }
+        /// <summary>
+        /// Преобразование всех значений перечисления в коллекцию строк
+        /// </summary>
+        /// <typeparam name="T">Тип перечисления</typeparam>
+        /// <returns>Список строкового значения перечислений</returns>
         private IEnumerable<string> GetEnumNames<T>()
         {
             return Enum.GetNames(typeof(T)).Select(x => x.Replace("_", " "));
@@ -1075,99 +1133,99 @@ namespace Metatrader_Auto_Optimiser.View_Model
     #region Entities for GUI
 
     /// <summary>
-    /// Report item wrapper
+    /// Класс - обертка элемента отчета (для графического интервейса)
     /// </summary>
     class ReportItem
     {
         /// <summary>
-        /// Constructor
+        /// Конструктор
         /// </summary>
-        /// <param name="item">report item</param>
+        /// <param name="item">Элемент</param>
         public ReportItem(OptimisationResult item)
         {
             result = item;
         }
         /// <summary>
-        /// Report item
+        /// Эллемент отчета
         /// </summary>
         private readonly OptimisationResult result;
 
         /// <summary>
-        /// From date getter
+        /// Дата "С"
         /// </summary>
         public DateTime From => result.report.DateBorders.From;
         /// <summary>
-        /// Till date getter
+        /// Дата "По"
         /// </summary>
         public DateTime Till => result.report.DateBorders.Till;
         /// <summary>
-        /// Sort by getter
+        /// Показатель по которому производится сортировка
         /// </summary>
         public double SortBy => result.SortBy;
         /// <summary>
-        /// Payoff getter
+        /// Payoff
         /// </summary>
         public double Payoff => result.report.OptimisationCoefficients.Payoff;
         /// <summary>
-        /// Profit facter getter
+        /// Profit factor
         /// </summary>
         public double ProfitFactor => result.report.OptimisationCoefficients.ProfitFactor;
         public double AverageProfitFactor => result.report.OptimisationCoefficients.AverageProfitFactor;
         /// <summary>
-        /// Recovery factor getter
+        /// Recovery factor
         /// </summary>
         public double RecoveryFactor => result.report.OptimisationCoefficients.RecoveryFactor;
         public double AverageRecoveryFactor => result.report.OptimisationCoefficients.AverageRecoveryFactor;
         /// <summary>
-        /// PL  getter
+        /// PL
         /// </summary>
         public double PL => result.report.OptimisationCoefficients.PL;
         /// <summary>
-        /// DD getter 
+        /// DD
         /// </summary>
         public double DD => result.report.OptimisationCoefficients.DD;
         /// <summary>
-        /// Altman Z score getter
+        /// Altman Z score
         /// </summary>
         public double AltmanZScore => result.report.OptimisationCoefficients.AltmanZScore;
         /// <summary>
-        /// Total trades getter
+        /// Total trades
         /// </summary>
         public int TotalTrades => result.report.OptimisationCoefficients.TotalTrades;
         /// <summary>
-        /// VaR getter
+        /// VaR 90
         /// </summary>
         public double VaR90 => result.report.OptimisationCoefficients.VaR.Q_90;
         /// <summary>
-        /// VaR getter
+        /// VaR 95
         /// </summary>
         public double VaR95 => result.report.OptimisationCoefficients.VaR.Q_95;
         /// <summary>
-        /// VaR getter
+        /// VaR 99
         /// </summary>
         public double VaR99 => result.report.OptimisationCoefficients.VaR.Q_99;
         /// <summary>
-        /// Mx getter
+        /// Mx
         /// </summary>
         public double Mx => result.report.OptimisationCoefficients.VaR.Mx;
         /// <summary>
-        /// Std getter
+        /// Std
         /// </summary>
         public double Std => result.report.OptimisationCoefficients.VaR.Std;
 
     }
 
     /// <summary>
-    /// Date border keeper for GUI
+    /// Класс - обертка, хрянящий границы дат (для графического интервейса)
     /// </summary>
     class DateBordersItem
     {
         /// <summary>
-        /// Constructor
+        /// Конструктор
         /// </summary>
-        /// <param name="dateBorders">Dates diaposone</param>
-        /// <param name="delete">callback that deletes current item</param>
-        /// <param name="borderType">history/forward border type</param>
+        /// <param name="dateBorders">Диаппозон дат</param>
+        /// <param name="delete">Коллбек удаляющзий текущий эллемент из списка</param>
+        /// <param name="borderType">history/forward тип границы</param>
         public DateBordersItem(DateBorders dateBorders, Action<DateBordersItem> delete, OptimisationType borderType)
         {
             DateBorders = dateBorders;
@@ -1175,64 +1233,64 @@ namespace Metatrader_Auto_Optimiser.View_Model
             Delete = new RelayCommand((object o) => delete(this));
         }
         /// <summary>
-        /// Date borders keeper
+        /// Хранитель границ дат
         /// </summary>
         public DateBorders DateBorders { get; }
         /// <summary>
-        /// Start date
+        /// Дата начала
         /// </summary>
         public DateTime From => DateBorders.From;
         /// <summary>
-        /// Finish date
+        /// Дата завершения
         /// </summary>
         public DateTime Till => DateBorders.Till;
         /// <summary>
-        /// History of forward date type
+        /// Тип оптимизации (исторический / форвардный)
         /// </summary>
         public OptimisationType BorderType { get; }
         /// <summary>
-        /// Callback to delete current item
+        /// Коллбек удаляющзий текущий элемент
         /// </summary>
         public ICommand Delete { get; }
     }
 
     /// <summary>
-    /// Data sorter item
+    /// Класс обертка для enum SortBy (для графического интервейса)
     /// </summary>
     class SorterItem
     {
         /// <summary>
-        /// Constructor
+        /// Конструктор
         /// </summary>
-        /// <param name="sorter">Sorter type</param>
-        /// <param name="deleteItem">Delete acurrent item</param>
+        /// <param name="sorter">Параметр сортировки</param>
+        /// <param name="deleteItem">Коллбек удаления из списка</param>
         public SorterItem(SortBy sorter, Action<object> deleteItem)
         {
             Sorter = sorter;
             Delete = new RelayCommand((object o) => deleteItem(this));
         }
         /// <summary>
-        /// Sorter item
+        /// Элемент сортировки
         /// </summary>
         public SortBy Sorter { get; }
         /// <summary>
-        /// Delete current item callback
+        /// Коллбек удаления элемента
         /// </summary>
         public ICommand Delete { get; }
     }
 
     /// <summary>
-    /// Filter item
+    /// Класс обертка для enum SortBy и флагов CompareType (для графического интервейса)
     /// </summary>
     class FilterItem : SorterItem
     {
         /// <summary>
-        /// Constructor
+        /// Конструктор
         /// </summary>
-        /// <param name="sorter">Sorterm item</param>
-        /// <param name="deleteItem">Delete callback</param>
-        /// <param name="compareType">Compare type</param>
-        /// <param name="border">Data border</param>
+        /// <param name="sorter">Элемент сортировки</param>
+        /// <param name="deleteItem">Коллбек удаления</param>
+        /// <param name="compareType">Способ сопоставления</param>
+        /// <param name="border">Сопоставляемая величина</param>
         public FilterItem(SortBy sorter, Action<object> deleteItem,
                           CompareType compareType, double border) : base(sorter, deleteItem)
         {
@@ -1240,22 +1298,22 @@ namespace Metatrader_Auto_Optimiser.View_Model
             Border = border;
         }
         /// <summary>
-        /// Compare type
+        /// Тип сопоставления
         /// </summary>
         public CompareType CompareType { get; }
         /// <summary>
-        /// Data border
+        /// Сопоставляемое значение
         /// </summary>
         public double Border { get; }
     }
 
     /// <summary>
-    /// Bot param item for GUI
+    /// Класс обертка для параметров робота (для графического интерфейса)
     /// </summary>
     class BotParamsData
     {
         /// <summary>
-        /// Constructor
+        /// Конструктор
         /// </summary>
         /// <param name="param">bot param item</param>
         public BotParamsData(ParamsItem param)
@@ -1263,15 +1321,15 @@ namespace Metatrader_Auto_Optimiser.View_Model
             this.param = param;
         }
         /// <summary>
-        /// Bot param item
+        /// Параметр робота
         /// </summary>
         private ParamsItem param;
         /// <summary>
-        /// Bot param item getter
+        /// Геттер для параметров робота
         /// </summary>
         public ParamsItem Param => param;
         /// <summary>
-        /// IsOptimise property getter/setter
+        /// Признак оптимизируемого параметра
         /// </summary>
         public bool IsOptimize
         {
@@ -1279,14 +1337,14 @@ namespace Metatrader_Auto_Optimiser.View_Model
             set => param.IsOptimize = value;
         }
         /// <summary>
-        /// Bot param name getter
+        /// Имя параметра
         /// </summary>
         public string Vriable
         {
             get => param.Variable;
         }
         /// <summary>
-        /// Value property getter/setter
+        /// Значение параметра
         /// </summary>
         public string Value
         {
@@ -1294,7 +1352,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             set => param.Value = value;
         }
         /// <summary>
-        /// Start property getter/setter
+        /// Начальное значение оптимизации 
         /// </summary>
         public string Start
         {
@@ -1302,7 +1360,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             set => param.Start = value;
         }
         /// <summary>
-        /// Step property getter/setter
+        /// Шаг перебора оптимизацией
         /// </summary>
         public string Step
         {
@@ -1310,7 +1368,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             set => param.Step = value;
         }
         /// <summary>
-        /// Stop property getter/setter
+        /// Завершающее хначение оптимизации
         /// </summary>
         public string Stop
         {
@@ -1320,12 +1378,12 @@ namespace Metatrader_Auto_Optimiser.View_Model
     }
 
     /// <summary>
-    /// Daily PL item
+    /// Класс обертка для значения дневного PL (для оптимизации)
     /// </summary>
     class DailyPLItem
     {
         /// <summary>
-        /// Constructor
+        /// Конструктор
         /// </summary>
         /// <param name="dailyData">daily pl data</param>
         public DailyPLItem(DailyData dailyData)
@@ -1334,38 +1392,38 @@ namespace Metatrader_Auto_Optimiser.View_Model
         }
 
         /// <summary>
-        /// Daily pl data
+        /// структура дневного PL
         /// </summary>
         private readonly DailyData dailyData;
         /// <summary>
-        /// Daily profit param getter
+        /// Средняя дневная присыль
         /// </summary>
         public double DailyProfit => dailyData.Profit.Value;
         /// <summary>
-        /// Daily profit trades param getter
+        /// Количество трейдов за день
         /// </summary>
         public int DailyProfitTrades => dailyData.Profit.Trades;
         /// <summary>
-        /// Daily DD param getter
+        /// Средние убытки за день 
         /// </summary>
         public double DailyDD => dailyData.DD.Value;
         /// <summary>
-        /// Daily DD trades getter
+        /// Количество убытков за день
         /// </summary>
         public int DailyDDTrades => dailyData.DD.Trades;
     }
 
     /// <summary>
-    /// Wrapper for changeble bot param items
+    /// Класс обертка для изменяемых параметров оптимизатора
     /// </summary>
     class OptimiserSetting : INotifyPropertyChanged
     {
         /// <summary>
-        /// Constructor
+        /// Конструктор
         /// </summary>
-        /// <param name="Name">Bot name</param>
-        /// <param name="Params">Bot param</param>
-        /// <param name="SelectionChanged">Combobox selection changed</param>
+        /// <param name="Name">Имя робота</param>
+        /// <param name="Params">Диаппазон изменения параметра</param>
+        /// <param name="SelectionChanged">Коллбек для выпадающего списка - изменение выбранного элемента</param>
         public OptimiserSetting(string Name, IEnumerable<string> Params, Action<string> SelectionChanged = null)
         {
             this.Name = Name;
@@ -1373,19 +1431,19 @@ namespace Metatrader_Auto_Optimiser.View_Model
             this.SelectionChanged = SelectionChanged;
         }
         /// <summary>
-        /// Combobox selection changed keeper
+        /// Коллбек вызываемый при смены выбранного параметра
         /// </summary>
         private readonly Action<string> SelectionChanged;
         /// <summary>
-        /// Param name
+        /// Имя параметра
         /// </summary>
         public string Name { get; }
         /// <summary>
-        /// Possiblevalues for the selected param
+        /// Возможные значения для выбранного параметра
         /// </summary>
         public IEnumerable<string> Params { get; private set; }
         /// <summary>
-        /// Set new param`s possiblevalues
+        /// Установка возможных значений для выбранного параметра
         /// </summary>
         /// <param name="params"></param>
         public void SetParams(IEnumerable<string> @params)
@@ -1398,12 +1456,21 @@ namespace Metatrader_Auto_Optimiser.View_Model
         }
 
         #region Selected value
+        /// <summary>
+        /// Выбранное значение параметра
+        /// </summary>
         public string SelectedParam => (Params.Count() > 0 ? Params.ElementAt(SelectedIndex) : null);
-
+        /// <summary>
+        /// Индекс выбранного параметра
+        /// </summary>
         private int _selectedIndex = 0;
-
+        /// <summary>
+        /// Событие обновления свойства
+        /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
-
+        /// <summary>
+        /// Геттер длявыбранного индекса
+        /// </summary>
         public int SelectedIndex
         {
             get => _selectedIndex;
@@ -1415,7 +1482,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
                     return;
                 }
                 _selectedIndex = value;
-                // Run selecteion changed callback in asyncron mode
+                // Асинхронный запуск события изменения выбранного ранее параметра
                 SelectionChanged?.BeginInvoke(Params.Count() > 0 ? Params.ElementAt(value) : null, null, null);
             }
         }

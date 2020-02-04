@@ -13,21 +13,24 @@ using ReportManager;
 namespace Metatrader_Auto_Optimiser.Model
 {
     /// <summary>
-    /// Model creator
+    /// Статическая фабрика модели
     /// </summary>
     class MainModelCreator
     {
         /// <summary>
-        /// Static constructor
+        /// Статический конструктор
         /// </summary>
         public static IMainModel Model => new MainModel();
     }
 
     /// <summary>
-    /// Main window model
+    /// Модель данных основного окна
     /// </summary>
     class MainModel : IMainModel
     {
+        /// <summary>
+        /// Конструктор по умолчанию
+        /// </summary>
         public MainModel()
         {
             optimiserCreators = new List<OptimiserCreator>
@@ -37,7 +40,7 @@ namespace Metatrader_Auto_Optimiser.Model
         }
 
         /// <summary>
-        /// Destructor
+        /// Деструктор
         /// </summary>
         ~MainModel()
         {
@@ -48,14 +51,20 @@ namespace Metatrader_Auto_Optimiser.Model
             Optimiser.OptimisationProcessFinished -= Optimiser_OptimisationProcessFinished;
         }
 
+        /// <summary>
+        /// Коллбек события обновления прогресс бара
+        /// </summary>
+        /// <param name="arg1">Статус</param>
+        /// <param name="arg2">Прогресс</param>
         private void Optimiser_ProcessStatus(string arg1, double arg2)
         {
+            // Переадресация вызова аналогичному событию модели
             PBUpdate(arg1, arg2);
         }
         /// <summary>
-        /// Optimiser callback
+        /// Коллбек окончания процеса оптимизации
         /// </summary>
-        /// <param name="obj">Optimiser</param>
+        /// <param name="obj">Оптимизатор</param>
         private void Optimiser_OptimisationProcessFinished(IOptimiser optimiser)
         {
             DirectoryInfo cachDir = optimiser.TerminalManager.TerminalChangeableDirectory
@@ -74,25 +83,37 @@ namespace Metatrader_Auto_Optimiser.Model
             LoadSavedOptimisation(optimiser.OptimiserWorkingDirectory);
             OptimisationStoped();
         }
+        /// <summary>
+        /// Метод созраняющий оптимизации в локальной директории
+        /// </summary>
+        /// <param name="optimiser">Оптимизатор</param>
         private void SaveOptimisations(IOptimiser optimiser)
         {
+            // Проверка на существование имени директории с оптимизациями
             if (string.IsNullOrEmpty(optimiser.OptimiserWorkingDirectory) ||
                 string.IsNullOrWhiteSpace(optimiser.OptimiserWorkingDirectory))
             {
                 return;
             }
 
+            // Создаем массивы с результатами оптимизации
             List<OptimisationResult> AllOptimisationResults = new List<OptimisationResult>();
             List<OptimisationResult> ForwardOptimisations = new List<OptimisationResult>();
             List<OptimisationResult> HistoryOptimisations = new List<OptimisationResult>();
 
+            // Получаем список всех файлов с расширением (*.xml) в локальной директории с оптимизациями
             List<FileInfo> files = Directory.GetFiles(optimiser.OptimiserWorkingDirectory, "*.xml").Select(x => new FileInfo(x)).ToList();
 
+            // Вложенная функция заполняющая созданные выше массивы ранее созраненными результатами оптимизации 
+            // Работает лишь если мы дополняем существующие, в случае когда мы перезаписываем старые результаты - не вызывается
             bool FillIn(List<OptimisationResult> results, IEnumerable<DateBorders> currentBorders, string fileName)
             {
+                // Заполнение массива и получение имени эксперкта, депозита, валюты депозита и плеча
                 results.AddRange(GetItems(files.Find(x => x.Name == fileName),
                     out string expert, out double deposit, out string currency, out int laverage));
 
+                // Проверка имени эксперта, депозита, валюты депозита и плеча 
+                // на соответствие заданным при старте текущей оптимищации оптимизации
                 if (expert != optimiser.PathToBot || deposit != optimiser.Balance ||
                    currency != optimiser.Currency || laverage != optimiser.Laverage)
                 {
@@ -100,6 +121,7 @@ namespace Metatrader_Auto_Optimiser.Model
                     return false;
                 }
 
+                // Отчищаем из старых массивов те резальтаты что соответствующи датам уже имеющимся в новой оптимизации
                 foreach (var item in currentBorders)
                 {
                     results.RemoveAll(x => x.report.DateBorders == item);
@@ -108,8 +130,11 @@ namespace Metatrader_Auto_Optimiser.Model
                 return true;
             }
 
+            // Задаем шаг обновления Прогресс бара
             double step = 100.0 / 4;
 
+            // Если существуют все 3 файла с оптимизациями в локальной директории с оптимизаациями 
+            // заполняем их через описанную выше локальную функцию
             if (files.Any(x => x.Name == "Report.xml") &&
                 files.Any(x => x.Name == "History.xml") &&
                 files.Any(x => x.Name == "Forward.xml"))
@@ -124,12 +149,15 @@ namespace Metatrader_Auto_Optimiser.Model
             }
             else
                 PBUpdate("Saving files", step);
+            // Учаляем все (*xml) файлы из локальной директории с файлами оптимизациями
             files.ForEach(x => x.Delete());
 
+            // Копируем в локальные копии результатов оптимизации - все прооптимизированные результаты из оптимизатора
             AllOptimisationResults.AddRange(optimiser.AllOptimisationResults);
             HistoryOptimisations.AddRange(optimiser.HistoryOptimisations);
             ForwardOptimisations.AddRange(optimiser.ForwardOptimisations);
 
+            // Локальная функция созраняющая результаты оптимизации в файл
             void WriteFile(List<OptimisationResult> results, string fileName)
             {
                 results.ReportWriter(optimiser.PathToBot, optimiser.Currency, optimiser.Balance, optimiser.Laverage,
@@ -138,6 +166,7 @@ namespace Metatrader_Auto_Optimiser.Model
 
             PBUpdate("Save All optimisations", step * 2);
 
+            // Проверяем список всех проведенных оптимизаций и созраняем их если таковые были найдены
             if (AllOptimisationResults.Count > 0)
                 WriteFile(AllOptimisationResults, "Report.xml");
             else
@@ -146,6 +175,7 @@ namespace Metatrader_Auto_Optimiser.Model
                 return;
             }
 
+            // Создаем пустую запись оптимизации - нужна для того что бы что то бы созранить что то в файл
             var emptyItem = new OptimisationResult
             {
                 report = new ReportItem
@@ -166,11 +196,13 @@ namespace Metatrader_Auto_Optimiser.Model
                 }
             };
 
+            // Созраняем пустую строку оптимизации если не было не одной оптимизации
             if (HistoryOptimisations.Count == 0)
                 HistoryOptimisations.Add(emptyItem);
             if (ForwardOptimisations.Count == 0)
                 ForwardOptimisations.Add(emptyItem);
 
+            // Созраняем в файл рещультаты тестов форвардных и исторических
             PBUpdate("Save History tests", step * 3);
             WriteFile(HistoryOptimisations, "History.xml");
 
@@ -181,50 +213,50 @@ namespace Metatrader_Auto_Optimiser.Model
 
         #region Directory managers
         /// <summary>
-        /// Terminal directory manager
+        /// Менеджер директорий терминалов
         /// </summary>
         private readonly TerminalDirectory terminalDirectory = new TerminalDirectory();
         /// <summary>
-        /// Current working directory manager
+        /// Менеджер локальной рабочей директории
         /// </summary>
         private readonly WorkingDirectory workingDirectory = new WorkingDirectory();
         #endregion
 
         /// <summary>
-        /// List of optimiser static fabrics
+        /// Список фабрик оптимизаторов
         /// </summary>
         private readonly List<OptimiserCreator> optimiserCreators;
 
         #region Getters
         /// <summary>
-        /// Selected optimiser
+        /// Выбранный оптимизатор
         /// </summary>
         public IOptimiser Optimiser { get; private set; }
         /// <summary>
-        /// Terminals list
+        /// Список имен терминалов (их ID)
         /// </summary>
         public IEnumerable<string> TerminalNames => terminalDirectory.Terminals.Select(x => x.Name);
         /// <summary>
-        /// Optimisers list
+        /// Список имен оптимиазторов
         /// </summary>
         public IEnumerable<string> OptimisatorNames => optimiserCreators.Select(x => x.Name);
         /// <summary>
-        /// List of optimisations directories
+        /// Список имен произведенных оптимизаций
         /// </summary>
         public IEnumerable<string> SavedOptimisations => workingDirectory.Reports.GetDirectories().Select(x => x.Name);
         /// <summary>
-        /// all optimisations results
+        /// Результаты всех произведенных оптимизаций
         /// </summary>
         public ReportData AllOptimisationResults { get; private set; } = new ReportData
         {
             AllOptimisationResults = new Dictionary<DateBorders, List<OptimisationResult>>()
         };
         /// <summary>
-        /// Forward optimisations
+        /// Результаты форвардных тестов
         /// </summary>
         public List<OptimisationResult> ForwardOptimisations { get; private set; } = new List<OptimisationResult>();
         /// <summary>
-        /// History optimisations
+        /// Результаты исторических тестов
         /// </summary>
         public List<OptimisationResult> HistoryOptimisations { get; private set; } = new List<OptimisationResult>();
 
@@ -232,22 +264,21 @@ namespace Metatrader_Auto_Optimiser.Model
 
         #region Events
         /// <summary>
-        /// Exception events
+        /// Событие переадресации текста ошибки в графический интерфейс
         /// </summary>
         public event Action<string> ThrowException;
         /// <summary>
-        /// End of optimisation events
+        /// Событие завершения процесса оптимизации
         /// </summary>
         public event Action OptimisationStoped;
         /// <summary>
-        /// Ptogress bar events
+        /// Событие обновления прогресс бара
         /// </summary>
         public event Action<string, double> PBUpdate;
         /// <summary>
         /// Событие изменения какого либо из свойств ViewModel 
         /// и его обработчики
         /// </summary>
-
         #region PropertyChanged Event
         public event PropertyChangedEventHandler PropertyChanged;
         /// <summary>
@@ -264,47 +295,55 @@ namespace Metatrader_Auto_Optimiser.Model
 
         #region Methods
         /// <summary>
-        /// Change optimiser manager
+        /// Метод смены оптимизатора
         /// </summary>
-        /// <param name="optimiserName">optimiser manager name</param>
-        /// <returns>true if sucsess</returns>
+        /// <param name="optimiserName">Имя выбранного оптимизатора</param>
+        /// <returns>true в слечае успеха</returns>
         public bool ChangeOptimiser(string optimiserName, string terminalName)
         {
+            // Еслизапущен процесс оптимизации или же запущен терминалл - то не чего не делаем
             if (Optimiser != null &&
                 (Optimiser.IsOptimisationInProcess || Optimiser.TerminalManager.IsActive))
             {
                 return false;
             }
 
+            // Если текущий оптимизатор не пуст
             if (Optimiser != null)
             {
+                // Отписываемся от событий прошлого оптимизатора
                 Optimiser.ProcessStatus -= Optimiser_ProcessStatus;
                 Optimiser.OptimisationProcessFinished -= Optimiser_OptimisationProcessFinished;
+
+                // Создаем новый оптимизатор и копируем старый менеджер терминалла
                 Optimiser = optimiserCreators.First(x => x.Name == optimiserName).Create(Optimiser.TerminalManager);
             }
             else
             {
                 try
                 {
+                    // Создаем новый оптимизатор и создаем менеджер терминалла
                     Optimiser = optimiserCreators.First(x => x.Name == optimiserName)
                                                  .Create(new TerminalManager(terminalDirectory.Terminals.First(x => x.Name == terminalName)));
                 }
                 catch (Exception e)
                 {
+                    // В случае ошибки - переадресоввываем её текст в графический интерфейс
                     ThrowException(e.Message);
                     return false;
                 }
             }
 
+            // Подписываемся на события нового оптимизатора
             Optimiser.ProcessStatus += Optimiser_ProcessStatus;
             Optimiser.OptimisationProcessFinished += Optimiser_OptimisationProcessFinished;
             return true;
         }
         /// <summary>
-        /// Change terminal manager
+        /// Метод изменяющий терминалл
         /// </summary>
-        /// <param name="terminalName">Terminal manager name</param>
-        /// <returns>true if sucseed</returns>
+        /// <param name="terminalName">Имя нового терминалла</param>
+        /// <returns>true в случае успеха</returns>
         public bool ChangeTerminal(string terminalName)
         {
             if (Optimiser.IsOptimisationInProcess || Optimiser.TerminalManager.IsActive)
@@ -322,11 +361,11 @@ namespace Metatrader_Auto_Optimiser.Model
             return true;
         }
         /// <summary>
-        /// Get parametres for selected robot
+        /// Получение параметров для выбранного эксперта
         /// </summary>
-        /// <param name="botName">Robot name</param>
-        /// <param name="terminalName">Terminal name</param>
-        /// <returns>Bot params</returns>
+        /// <param name="botName">Имя эксперта</param>
+        /// <param name="terminalName">Имя терминалла</param>
+        /// <returns>Параметры эксперта</returns>
         public IEnumerable<ParamsItem> GetBotParams(string botName, bool isUpdate)
         {
             if (botName == null)
@@ -403,13 +442,15 @@ namespace Metatrader_Auto_Optimiser.Model
             }
         }
         /// <summary>
-        /// Load optimisations from file
+        /// Загрузка оптимизаций из файлов
         /// </summary>
-        /// <param name="optimisationName"></param>
+        /// <param name="optimisationName">Имя директории с оптимизациями</param>
         public async void LoadSavedOptimisation(string optimisationName)
         {
             double step = 100.0 / 4.0;
+            // Выбор директории с оптимизациями
             DirectoryInfo selectedDir = workingDirectory.Reports.GetDirectory(optimisationName);
+            // Проверка директории на существование
             #region Check
             if (selectedDir == null)
             {
@@ -418,6 +459,7 @@ namespace Metatrader_Auto_Optimiser.Model
             }
             #endregion
 
+            // Отчистка ранее созраненных результатов
             AllOptimisationResults.AllOptimisationResults.Clear();
             AllOptimisationResults = new ReportData
             {
@@ -426,23 +468,28 @@ namespace Metatrader_Auto_Optimiser.Model
             HistoryOptimisations.Clear();
             ForwardOptimisations.Clear();
 
+            // ЗАпуск вторичного потока с загрузкой результатов из файлов
             await Task.Run(() =>
             {
                 try
                 {
                     PBUpdate("Getting files", step);
+                    // Получаем список файлов с расширением (*xml)
                     FileInfo[] files = selectedDir.GetFiles("*.xml");
 
+                    // Если существуют все 3 файла - загружаем оптимизации
                     if (files.Any(x => x.Name == "Report.xml") &&
                        files.Any(x => x.Name == "History.xml") &&
                        files.Any(x => x.Name == "Forward.xml"))
                     {
+                        // Создаем новый отчет всех прозведенных оптимизаций 
                         ReportData reportData = new ReportData
                         {
                             AllOptimisationResults = new Dictionary<DateBorders, List<OptimisationResult>>()
                         };
 
                         PBUpdate("Results.xml", step * 2);
+                        // Читаем файл со всеми произведенными оптимизациями и занвсим результаты в соответствующие переменные
                         List<OptimisationResult> report = GetItems(files.First(x => x.Name == "Report.xml"),
                                                                    out string expert, out double deposit,
                                                                    out string currency, out int laverage);
@@ -452,6 +499,7 @@ namespace Metatrader_Auto_Optimiser.Model
                         reportData.Laverage = laverage;
 
                         #region Check
+                        // Локальная функция проверяющая верность настроек тестера для всех файлов
                         void CompareTestersettings()
                         {
                             if (expert != reportData.Expert)
@@ -464,19 +512,22 @@ namespace Metatrader_Auto_Optimiser.Model
                                 throw new Exception("Lavreges are different");
                         }
 
+                        // Проверяем существуют ли записи в файле с настройками оптимизаций 
                         if (report.Count == 0)
                             throw new Exception("File 'Report.xml' is empty or can`t be read");
                         #endregion
 
+                        // Добавляем разбитую на даты историю оптимизаций из файла
                         List<DateBorders> dates = report.Select(x => x.report.DateBorders).Distinct().ToList();
                         foreach (var item in dates)
                         {
                             reportData.AllOptimisationResults.Add(item,
                                 new List<OptimisationResult>(report.Where(x => x.report.DateBorders == item)));
                         }
-
+                        // Созраняем прочтенную историю всех произведенных оптимизаций
                         AllOptimisationResults = reportData;
 
+                        // СОзраняем историю исторических тестов и производим проверку на корректность настроек тестера
                         PBUpdate("History.xml", step * 3);
                         HistoryOptimisations = GetItems(files.First(x => x.Name == "History.xml"),
                                                         out expert, out deposit,
@@ -485,6 +536,7 @@ namespace Metatrader_Auto_Optimiser.Model
                         CompareTestersettings();
                         #endregion
 
+                        // СОзраняем историю форвардных тестов и производим проверку на корректность настроек тестера
                         PBUpdate("Forward.xml", step * 4);
                         ForwardOptimisations = GetItems(files.First(x => x.Name == "Forward.xml"),
                                                         out expert, out deposit,
@@ -506,6 +558,7 @@ namespace Metatrader_Auto_Optimiser.Model
                 }
                 catch (Exception e)
                 {
+                    // В случае ошибки все чистим
                     HistoryOptimisations.Clear();
                     ForwardOptimisations.Clear();
                     AllOptimisationResults.AllOptimisationResults.Clear();
@@ -520,19 +573,20 @@ namespace Metatrader_Auto_Optimiser.Model
 
             PBUpdate(null, 0);
 
+            // Информируем графику о произведенной перезаписи результатов оптимизации
             OnPropertyChanged("AllOptimisationResults");
             OnPropertyChanged("ForwardOptimisations");
             OnPropertyChanged("HistoryOptimisations");
         }
         /// <summary>
-        /// Read file
+        /// Чтение файла с результатами оптимизаций
         /// </summary>
-        /// <param name="file"></param>
-        /// <param name="expert"></param>
-        /// <param name="deposit"></param>
-        /// <param name="currensy"></param>
-        /// <param name="laverage"></param>
-        /// <returns></returns>
+        /// <param name="file">Файл</param>
+        /// <param name="expert">Имя жксперта</param>
+        /// <param name="deposit">Депозит</param>
+        /// <param name="currensy">Валюта депозита</param>
+        /// <param name="laverage">Кредитное плечо</param>
+        /// <returns>Список результатов оптимизации</returns>
         private List<OptimisationResult> GetItems(FileInfo file, out string expert,
                                           out double deposit, out string currensy, out int laverage)
         {
@@ -554,28 +608,28 @@ namespace Metatrader_Auto_Optimiser.Model
             return ans;
         }
         /// <summary>
-        /// Save reports to file
+        /// Созраняем отчет оптимизаций за выбранные даты в (*.csv) файл
         /// </summary>
-        /// <param name="dateBorders"></param>
-        /// <param name="pathToSavingFile"></param>
+        /// <param name="dateBorders">Выбранные временные границы</param>
+        /// <param name="pathToSavingFile">Путь к созраняемому файлу</param>
         public void SaveToCSVOptimisations(DateBorders dateBorders, string pathToSavingFile)
         {
             CreateCsv(dateBorders, pathToSavingFile);
         }
         /// <summary>
-        /// Save history tests to file
+        /// Созранение исторических и форвардных тестов в файл
         /// </summary>
-        /// <param name="pathToSavingFile"></param>
+        /// <param name="pathToSavingFile">Путь к сохраняемому файлу</param>
         public void SaveToCSVSelectedOptimisations(string pathToSavingFile)
         {
             CreateCsv(null, pathToSavingFile);
         }
         /// <summary>
-        /// Startoptimisation
+        /// Запуск оптимизаций
         /// </summary>
-        /// <param name="optimiserInputData">optimiser inpit data</param>
-        /// <param name="isAppend">flag is appent to the file</param>
-        /// <param name="dirPrefix">directory prifix</param>
+        /// <param name="optimiserInputData">Входные данные для оптимизатора</param>
+        /// <param name="isAppend">Флаг - нужно ли дополнять файл ?</param>
+        /// <param name="dirPrefix">Префикс директории</param>
         public async void StartOptimisation(OptimiserInputData optimiserInputData, bool isAppend, string dirPrefix)
         {
             if (string.IsNullOrEmpty(optimiserInputData.Symb) ||
@@ -635,22 +689,25 @@ namespace Metatrader_Auto_Optimiser.Model
             });
         }
         /// <summary>
-        /// Start test
+        /// Запуск тестов
         /// </summary>
-        /// <param name="optimiserInputData">input data for tester/optimiser</param>
+        /// <param name="optimiserInputData">Взодные данные для тестера</param>
         public async void StartTest(OptimiserInputData optimiserInputData)
         {
+            // Проверка не запущен ли терминалл
             if (Optimiser.TerminalManager.IsActive)
             {
                 ThrowException("Terminal already running");
                 return;
             }
 
+            // Задаем диаппазон дат
             #region From/Forward/To
             DateTime Forward = new DateTime();
             DateTime ToDate = Forward;
             DateTime FromDate = Forward;
 
+            // Проверка на количество переданных дат. Максимум одна историческая и одна форвардная
             if (optimiserInputData.HistoryBorders.Count > 1 ||
                 optimiserInputData.ForwardBorders.Count > 1)
             {
@@ -659,9 +716,11 @@ namespace Metatrader_Auto_Optimiser.Model
                 return;
             }
 
+            // Если передана и историческая и форвардная даты
             if (optimiserInputData.HistoryBorders.Count == 1 &&
                 optimiserInputData.ForwardBorders.Count == 1)
             {
+                // Тестируем на корректность заданного промежутка
                 DateBorders _Forward = optimiserInputData.ForwardBorders[0];
                 DateBorders _History = optimiserInputData.HistoryBorders[0];
 
@@ -672,12 +731,14 @@ namespace Metatrader_Auto_Optimiser.Model
                     return;
                 }
 
+                // Запоминаем даты
                 Forward = _Forward.From;
                 FromDate = _History.From;
                 ToDate = (_History.Till < _Forward.Till ? _Forward.Till : _History.Till);
             }
-            else
+            else // Если передана лишь форвардная или же лишь историческая дата
             {
+                // Созраняем их и считаем что это была историческая дата (даже если была передана форвардная)
                 if (optimiserInputData.HistoryBorders.Count > 0)
                 {
                     FromDate = optimiserInputData.HistoryBorders[0].From;
@@ -693,10 +754,12 @@ namespace Metatrader_Auto_Optimiser.Model
 
             PBUpdate("Start test", 100);
 
+            // Запукаем тест во вторичном потоке
             await Task.Run(() =>
             {
                 try
                 {
+                    // Создаем файл с настройкамит эксперта
                     #region Create (*.set) file
                     FileInfo file = new FileInfo(Path.Combine(Optimiser
                                                     .TerminalManager
@@ -708,6 +771,7 @@ namespace Metatrader_Auto_Optimiser.Model
 
                     List<ParamsItem> botParams = new List<ParamsItem>(GetBotParams(optimiserInputData.RelativePathToBot, false));
 
+                    // Заполняем настройки эксперта теми что были введены в графическом интерфейсе
                     for (int i = 0; i < optimiserInputData.BotParams.Count; i++)
                     {
                         var item = optimiserInputData.BotParams[i];
@@ -721,6 +785,7 @@ namespace Metatrader_Auto_Optimiser.Model
                         }
                     }
 
+                    // Созраянем настройки в файл
                     SetFileManager setFile = new SetFileManager(file.FullName, false)
                     {
                         Params = botParams
@@ -728,6 +793,7 @@ namespace Metatrader_Auto_Optimiser.Model
                     setFile.SaveParams();
                     #endregion
 
+                    // Создаем конфиг терминала
                     #region Create config file
                     Config config = new Config(Optimiser.TerminalManager
                                                         .TerminalChangeableDirectory
@@ -757,9 +823,12 @@ namespace Metatrader_Auto_Optimiser.Model
                     config.Tester.Visual = false;
                     #endregion
 
+                    // Конфигурируем терминалл и запускаем его
                     Optimiser.TerminalManager.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
                     Optimiser.TerminalManager.Config = config;
                     Optimiser.TerminalManager.Run();
+
+                    // Ожидаем закрытие терминала
                     Optimiser.TerminalManager.WaitForStop();
                 }
                 catch (Exception e)
@@ -771,17 +840,17 @@ namespace Metatrader_Auto_Optimiser.Model
             });
         }
         /// <summary>
-        /// Stop optimisation
+        /// Завершаем оптимизацию извне оптимизатора
         /// </summary>
         public void StopOptimisation()
         {
             Optimiser.Stop();
         }
         /// <summary>
-        /// Sort loaded and selected report
+        /// Сортируем загруженный отчет
         /// </summary>
-        /// <param name="borders">selected date borders</param>
-        /// <param name="sortingFlags">selected sorting flags</param>
+        /// <param name="borders">Выбранный диаппазон дат</param>
+        /// <param name="sortingFlags">Выбранные параметры сортировки</param>
         public async void SortResults(DateBorders borders, IEnumerable<SortBy> sortingFlags)
         {
             void UpdatePB(string status, double progress)
@@ -805,10 +874,10 @@ namespace Metatrader_Auto_Optimiser.Model
             UpdatePB(null, 0);
         }
         /// <summary>
-        /// Filter optimisation results
+        /// Фильтруем результаты оптимизаций
         /// </summary>
-        /// <param name="borders">selected date borders</param>
-        /// <param name="compareData">compare flags</param>
+        /// <param name="borders">Выбранный диаппазон дат</param>
+        /// <param name="compareData">Сопостовляемые флаги</param>
         public async void FilterResults(DateBorders borders, IDictionary<SortBy, KeyValuePair<CompareType, double>> compareData)
         {
             void UpdatePB(string status, double progress)
@@ -832,7 +901,7 @@ namespace Metatrader_Auto_Optimiser.Model
             UpdatePB(null, 0);
         }
         /// <summary>
-        /// Create (*csv) file
+        /// Создаем (*csv) файл
         /// </summary>
         /// <param name="borders"></param>
         /// <param name="pathToFile"></param>
