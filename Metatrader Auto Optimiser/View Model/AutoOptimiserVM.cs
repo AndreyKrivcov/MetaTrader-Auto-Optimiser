@@ -34,10 +34,10 @@ namespace Metatrader_Auto_Optimiser.View_Model
                                     new OptimiserSetting("Available experts", model.Optimiser.TerminalManager.Experts, (string botName)=>
                                     { SetBotParams(botName,false); }),
                                     new OptimiserSetting("Execution Mode", GetEnumNames<ENUM_ExecutionDelay>()),
-                                    new OptimiserSetting("Deposit", new []{ "3000", "5000", "10000", "25000", "50000", "100000" }),
+                                    new OptimiserSetting("Deposit", new []{ "1000", "3000", "5000", "10000", "25000", "50000", "100000" }),
                                     new OptimiserSetting("Currency", new []{ "RUR", "USD", "EUR", "GBP", "CHF"}),
                                     new OptimiserSetting("Optimisation mode", GetEnumNames<ENUM_OptimisationMode>()),
-                                    new OptimiserSetting("Laverage", new []{"1", "5", "50", "100", "500"}),
+                                    new OptimiserSetting("Laverage", new []{"1", "5", "50", "100", "500", "1000"}),
                                     new OptimiserSetting("TF", GetEnumNames<ENUM_Timeframes>()),
                                     new OptimiserSetting("Optimisation model", GetEnumNames<ENUM_Model>())
                                 };
