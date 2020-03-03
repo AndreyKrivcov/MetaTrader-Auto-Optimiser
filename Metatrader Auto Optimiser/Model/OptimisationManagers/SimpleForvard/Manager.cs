@@ -454,7 +454,16 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
                     // Если в отчете с результатами оптимизаций было прооптимизировано разное количество временных интервалов 
                     // хотя был запуск лишь для одного временного интервала - то выкидываем ошибку
                     if (results.Select(x => x.report.DateBorders).Distinct().Count() > 1)
-                        throw new Exception("There are more than one date borders inside report file");
+                    {
+                        //  throw new Exception("There are more than one date borders inside report file");
+
+                        for (int c = 0; c < results.Count; c++)
+                        {
+                            var result_item = results[c];
+                            result_item.report.DateBorders = item;
+                            results[c] = result_item;
+                        }
+                    }
 
                     // Добавление отчета
                     if (!optimiserSettings.ReplaceDates)
