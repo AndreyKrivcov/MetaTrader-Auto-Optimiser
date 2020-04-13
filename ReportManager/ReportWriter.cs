@@ -188,7 +188,8 @@ namespace ReportManager
         /// <param name="pl"></param>
         /// <param name="dd"></param>
         /// <param name="altmanZScore"></param>
-        public static void AppendMainCoef(double payoff,
+        public static void AppendMainCoef(double customCoef,
+                                            double payoff,
                                             double profitFactor,
                                             double averageProfitFactor,
                                             double recoveryFactor,
@@ -198,6 +199,8 @@ namespace ReportManager
                                             double dd,
                                             double altmanZScore)
         {
+
+            ReportItem.OptimisationCoefficients.Custom = customCoef;
             ReportItem.OptimisationCoefficients.Payoff = payoff;
             ReportItem.OptimisationCoefficients.ProfitFactor = profitFactor;
             ReportItem.OptimisationCoefficients.AverageProfitFactor = averageProfitFactor;
@@ -398,6 +401,7 @@ namespace ReportManager
             xpath = "Optimisatin_Report/Optimisation_Results/Result[last()]/Coefficients";
 
             // Сохраняем коэфициенты
+            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.Custom.ToString(), new Dictionary<string, string> { { "Name", "Custom"} });
             WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.Payoff.ToString(), new Dictionary<string, string> { { "Name", "Payoff" } });
             WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.ProfitFactor.ToString(), new Dictionary<string, string> { { "Name", "Profit factor" } });
             WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.AverageProfitFactor.ToString(), new Dictionary<string, string> { { "Name", "Average Profit factor" } });

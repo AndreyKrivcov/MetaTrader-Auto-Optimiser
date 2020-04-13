@@ -170,6 +170,7 @@ namespace ReportManager
         {
             switch (sortBy)
             {
+                case SortBy.Custom: return SortMethod.Increasing;
                 case SortBy.Payoff: return SortMethod.Increasing;
                 case SortBy.ProfitFactor: return SortMethod.Increasing;
                 case SortBy.AverageProfitFactor: return SortMethod.Increasing;
@@ -391,6 +392,7 @@ namespace ReportManager
             #endregion
 
             // Пишем остальные коэййициенты
+            WriteItem(writer, "Custom", resultItem.GetResult(SortBy.Custom).ToString());
             WriteItem(writer, "Payoff", resultItem.GetResult(SortBy.Payoff).ToString());
             WriteItem(writer, "Profit factor", resultItem.GetResult(SortBy.ProfitFactor).ToString());
             WriteItem(writer, "Average Profit factor", resultItem.GetResult(SortBy.AverageProfitFactor).ToString());
@@ -474,6 +476,7 @@ namespace ReportManager
     /// </summary>
     public enum SortBy
     {
+        Custom,
         Payoff,
         ProfitFactor,
         AverageProfitFactor,
@@ -563,6 +566,7 @@ namespace ReportManager
         {
             switch (resultType)
             {
+                case ReportManager.SortBy.Custom: return report.OptimisationCoefficients.Custom;
                 case ReportManager.SortBy.Payoff: return report.OptimisationCoefficients.Payoff;
                 case ReportManager.SortBy.ProfitFactor: return report.OptimisationCoefficients.ProfitFactor;
                 case ReportManager.SortBy.AverageProfitFactor: return report.OptimisationCoefficients.AverageProfitFactor;
@@ -630,7 +634,8 @@ namespace ReportManager
                 {
                     ReportWriter.AppendBotParam(param.Key, param.Value);
                 }
-                ReportWriter.AppendMainCoef(GetResult(ReportManager.SortBy.Payoff),
+                ReportWriter.AppendMainCoef(GetResult(ReportManager.SortBy.Custom),
+                                            GetResult(ReportManager.SortBy.Payoff),
                                             GetResult(ReportManager.SortBy.ProfitFactor),
                                             GetResult(ReportManager.SortBy.AverageProfitFactor),
                                             GetResult(ReportManager.SortBy.RecoveryFactor),
@@ -649,7 +654,6 @@ namespace ReportManager
                                           (int)GetResult(ReportManager.SortBy.MaxDDTotalTrades),
                                           (int)GetResult(ReportManager.SortBy.MaxProfitConsecutivesTrades),
                                           (int)GetResult(ReportManager.SortBy.MaxDDConsecutivesTrades));
-
 
                 foreach (var day in report.OptimisationCoefficients.TradingDays)
                 {

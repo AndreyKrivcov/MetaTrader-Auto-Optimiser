@@ -96,7 +96,7 @@ namespace ReportManager
                 // Текущая нода
                 XmlNode result = (XmlNode)enumerator.Current;
                 // текущий элемент отчета
-                ReportItem = new ReportItem
+                var Item = new ReportItem
                 {
                     BotParams = new Dictionary<string, string>(),
                     Symbol = result.Attributes["Symbol"].Value,
@@ -162,14 +162,22 @@ namespace ReportManager
                         }
                     }
                 };
+                try
+                {
+                    Item.OptimisationCoefficients.Custom = Convert.ToDouble(result["Coefficients"].SelectSingleNode(SelectItem("Custom")).InnerText.Replace(",", "."), formatInfo);
+                }
+                catch (Exception)
+                {
+                    Item.OptimisationCoefficients.Custom = 0;
+                }
 
                 // Заполняем параметры робота
                 foreach (XmlNode item in result.ChildNodes)
                 {
                     if (item.Name == "Item")
-                        ReportItem.Value.BotParams.Add(item.Attributes["Name"].Value, item.InnerText);
+                        Item.BotParams.Add(item.Attributes["Name"].Value, item.InnerText);
                 }
-
+                ReportItem = Item;
             }
 
             return ans;
@@ -442,7 +450,7 @@ namespace ReportManager
     {
         public double Payoff, ProfitFactor, AverageProfitFactor,
                       RecoveryFactor, AverageRecoveryFactor, PL, DD,
-                      AltmanZScore;
+                      AltmanZScore,Custom;
         public int TotalTrades;
         public VaRData VaR;
         public MaxPLDD MaxPLDD;
