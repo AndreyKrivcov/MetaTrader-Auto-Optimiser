@@ -62,6 +62,7 @@
     </Compile>
     <Compile Include="Model\DirectoryManagers\WorkingDirectory.cs" />
     <Compile Include="Model\FileReaders\DTSourceManager.cs" />
+    <Compile Include="Model\AutoFillInDateBordersM.cs" />
     <Compile Include="Model\IMainModel.cs" />
     <Compile Include="Model\MainModel.cs" />
     <Compile Include="Model\OptimisationManagers\IOptimiser.cs" />
@@ -70,8 +71,12 @@
     <Compile Include="Model\OptimisationManagers\SimpleForvard\SimpleOptimiserSettings.xaml.cs">
       <DependentUpon>SimpleOptimiserSettings.xaml</DependentUpon>
     </Compile>
+    <Compile Include="View Model\AutoFillInDateBordersVM.cs" />
     <Compile Include="View Model\AutoOptimiserVM.cs" />
     <Compile Include="View Model\RelayCommand.cs" />
+    <Compile Include="View\AutoFillInDateBorders.xaml.cs">
+      <DependentUpon>AutoFillInDateBorders.xaml</DependentUpon>
+    </Compile>
     <Compile Include="View\ListViewExtention.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -115,6 +120,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Model\OptimisationManagers\SimpleForvard\SimpleOptimiserSettings.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="View\AutoFillInDateBorders.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

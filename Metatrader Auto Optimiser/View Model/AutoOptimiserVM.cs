@@ -7,7 +7,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows;
 using System.Windows.Input;
+
+using Metatrader_Auto_Optimiser.View;
 
 namespace Metatrader_Auto_Optimiser.View_Model
 {
@@ -66,6 +69,14 @@ namespace Metatrader_Auto_Optimiser.View_Model
             // Заполняем настройки для первого робота из списка
             var settings = OptimiserSettings.Find(x => x.Name == "Available experts");
             SetBotParams(settings.SelectedParam, false);
+
+            #region Subwindows
+            autoFillInDateBorders = new SubFormKeeper(
+                () => { return new AutoFillInDateBorders(); },
+                (Window w) => { },
+                (Window w)=> { });
+            AutoFillInDateBordersCreator.Model.DateBorders += Model_DateBorders;
+            #endregion
 
             // Заполняем коллбеки графического интерфейса
             #region Fill in commands
@@ -127,8 +138,14 @@ namespace Metatrader_Auto_Optimiser.View_Model
             });
             // Коллбек нажатия на кнопку созранения или же напротив загрузки файла с результатами выбора форвардных и исторических диаппазонов
             SaveOrLoadDates = new RelayCommand(_SaveOrLoadDates);
+
+            AutosetDateBorder = new RelayCommand((object o)=> 
+            { 
+                autoFillInDateBorders.Open(); 
+            });
             #endregion
         }
+
         /// <summary>
         /// Деструктор
         /// </summary>
@@ -139,6 +156,8 @@ namespace Metatrader_Auto_Optimiser.View_Model
             model.PBUpdate -= Model_PBUpdate;
             model.ThrowException -= Model_ThrowException;
             model.PropertyChanged -= Model_PropertyChanged;
+            AutoFillInDateBordersCreator.Model.DateBorders += Model_DateBorders;
+            autoFillInDateBorders.Close();
         }
 
         #region Events and callbacks
@@ -712,13 +731,16 @@ namespace Metatrader_Auto_Optimiser.View_Model
         /// <param name="o"></param>
         private void _AddDateBorder(object o)
         {
+            _AddDateBorder(DateFrom, DateTill, GetEnum<OptimisationType>(DateBorderTypes.ElementAt(SelectedDateBorderType)));
+        }
+        void _AddDateBorder(DateTime From, DateTime Till, OptimisationType DateBorderType)
+        {
             try
             {
-                DateBorders border = new DateBorders(DateFrom, DateTill);
+                DateBorders border = new DateBorders(From,Till);
                 if (!DateBorders.Any(x => x.DateBorders == border))
                 {
-                    DateBorders.Add(new DateBordersItem(border, _DeleteDateBorder,
-                        GetEnum<OptimisationType>(DateBorderTypes.ElementAt(SelectedDateBorderType))));
+                    DateBorders.Add(new DateBordersItem(border, _DeleteDateBorder,DateBorderType));
                 }
             }
             catch (Exception e)
@@ -734,6 +756,15 @@ namespace Metatrader_Auto_Optimiser.View_Model
         {
             DateBorders.Remove(item);
         }
+
+        public ICommand AutosetDateBorder { get; }
+        private void Model_DateBorders(List<KeyValuePair<OptimisationType, DateTime[]>> obj)
+        {
+            foreach (var item in obj)
+                _AddDateBorder(item.Value[0], item.Value[1], item.Key);
+        }
+
+        private readonly SubFormKeeper autoFillInDateBorders;
         #endregion
 
         #region Results data
@@ -1131,6 +1162,51 @@ namespace Metatrader_Auto_Optimiser.View_Model
     }
 
     #region Entities for GUI
+    class SubFormKeeper
+    {
+        public SubFormKeeper(Func<Window> createWindow, Action<Window> subscribe_events, Action<Window> unSubscribe_events)
+        {
+            creator = createWindow;
+            Subscribe_events = subscribe_events;
+            UnSubscribe_events = unSubscribe_events;
+        }
+        ~SubFormKeeper()
+        {
+            Close();
+        }
+
+        private readonly Func<Window> creator;
+        private readonly Action<Window> Subscribe_events;
+        private readonly Action<Window> UnSubscribe_events;
+
+        private Window window = null;
+        public void Open()
+        {
+            if (window == null)
+            {
+                window = creator();
+                if (!window.IsActive)
+                    window.Show();
+
+                window.Closed += Window_Closed;
+                Subscribe_events(window);
+            }
+            else
+                window.Activate();
+        }
+
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            window.Closed -= Window_Closed;
+            UnSubscribe_events(window);
+            window = null;
+        }
+        public void Close()
+        {
+            if (window != null)
+                window.Close();
+        }
+    }
 
     /// <summary>
     /// Класс - обертка элемента отчета (для графического интервейса)
@@ -1170,11 +1246,17 @@ namespace Metatrader_Auto_Optimiser.View_Model
         /// Profit factor
         /// </summary>
         public double ProfitFactor => result.report.OptimisationCoefficients.ProfitFactor;
+        /// <summary>
+        /// Average profit factor
+        /// </summary>
         public double AverageProfitFactor => result.report.OptimisationCoefficients.AverageProfitFactor;
         /// <summary>
         /// Recovery factor
         /// </summary>
         public double RecoveryFactor => result.report.OptimisationCoefficients.RecoveryFactor;
+        /// <summary>
+        /// Average recovery factor
+        /// </summary>
         public double AverageRecoveryFactor => result.report.OptimisationCoefficients.AverageRecoveryFactor;
         /// <summary>
         /// PL
@@ -1212,7 +1294,10 @@ namespace Metatrader_Auto_Optimiser.View_Model
         /// Std
         /// </summary>
         public double Std => result.report.OptimisationCoefficients.VaR.Std;
-
+        /// <summary>
+        /// Custom coeffitiant
+        /// </summary>
+        public double CustomCoef => result.report.OptimisationCoefficients.Custom;
     }
 
     /// <summary>

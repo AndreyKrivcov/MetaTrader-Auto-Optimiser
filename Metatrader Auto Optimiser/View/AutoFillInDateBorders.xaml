@@ -1,0 +1,62 @@
+﻿<Window x:Class="Metatrader_Auto_Optimiser.View.AutoFillInDateBorders"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Metatrader_Auto_Optimiser.View_Model"
+        xmlns:local="clr-namespace:Metatrader_Auto_Optimiser.View"
+        mc:Ignorable="d"
+        Title="Auto Fill In Date Borders" Height="200" Width="400"
+        MinHeight="200" MinWidth="400" MaxHeight="200" MaxWidth="400">
+
+    <Window.DataContext>
+        <vm:AutoFillInDateBordersVM/>
+    </Window.DataContext>
+    
+    <Grid Margin="5">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition/>
+            <RowDefinition Height="20"/>
+        </Grid.RowDefinitions>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <WrapPanel>
+                <Label Content="From"/>
+                <DatePicker SelectedDate="{Binding From}"/>
+            </WrapPanel>
+            <WrapPanel Grid.Column="1">
+                <Label Content="To"/>
+                <DatePicker SelectedDate="{Binding Till}"/>
+            </WrapPanel>
+        </Grid>
+
+        <ListView Grid.Row="1"
+                  ItemsSource="{Binding Steps}">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Criteria"
+                                    Width="120"
+                                    DisplayMemberBinding="{Binding Type}"/>
+                    <GridViewColumn Header="Value"
+                                    Width="150">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding Value}"
+                                         Width="100"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <Button Content="Set"
+                Command="{Binding Set}"
+                Grid.Row="2"/>
+    </Grid>
+</Window>

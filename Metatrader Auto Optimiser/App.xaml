@@ -19,8 +19,13 @@
         </Style>
 
         <!--Задаем высоту календарей-->
-        <Style TargetType="DatePicker">
-            <Setter Property="Height" Value="22"/>
+        <Style TargetType="{x:Type DatePicker}">
+            <Style.Resources>
+                <!-- Reset the Button style inside the DatePicker to default values -->
+                <Style TargetType="{x:Type Button}">
+                    <Setter Property="MinHeight" Value="0"/>
+                </Style>
+            </Style.Resources>
         </Style>
 
         <!--Задаем высоту текст боксов-->

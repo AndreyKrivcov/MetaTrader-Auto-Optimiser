@@ -328,6 +328,9 @@
                                 <Button Content="Save / Load"
                                         Margin="2,0,0,0"
                                         Command="{Binding SaveOrLoadDates}"/>
+                                <Button Content="Autoset"
+                                        Margin="2,0,0,0"
+                                        Command="{Binding AutosetDateBorder}"/>
                             </WrapPanel>
 
                             <ListView Grid.Row="1"
@@ -403,6 +406,8 @@
                                                                     DisplayMemberBinding="{Binding From}"/>
                                                     <GridViewColumn Header="Date Till"
                                                                     DisplayMemberBinding="{Binding Till}"/>
+                                                    <GridViewColumn Header="Custom"
+                                                                    DisplayMemberBinding="{Binding CustomCoef}"/>
                                                     <GridViewColumn Header="Payoff"
                                                                     DisplayMemberBinding="{Binding Payoff}"/>
                                                     <GridViewColumn Header="Profit pactor"
@@ -445,6 +450,8 @@
                                                                     DisplayMemberBinding="{Binding From}"/>
                                                     <GridViewColumn Header="Date Till"
                                                                     DisplayMemberBinding="{Binding Till}"/>
+                                                    <GridViewColumn Header="Custom"
+                                                                    DisplayMemberBinding="{Binding CustomCoef}"/>
                                                     <GridViewColumn Header="Payoff"
                                                                     DisplayMemberBinding="{Binding Payoff}"/>
                                                     <GridViewColumn Header="Profit pactor"
@@ -482,13 +489,17 @@
                         </TabItem>
                         <TabItem Header="Optimisations">
                             <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="63*"/>
+                                    <ColumnDefinition Width="500*"/>
+                                </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="30"/>
                                     <RowDefinition/>
                                 </Grid.RowDefinitions>
 
                                 <WrapPanel HorizontalAlignment="Left"
-                                           VerticalAlignment="Center">
+                                           VerticalAlignment="Center" Grid.ColumnSpan="2" Margin="0,4,0,4.4">
                                     <Button Content="Save to (*.csv)"
                                             Width="100"
                                             Command="{Binding SaveToCsv}"
@@ -504,13 +515,13 @@
                                 </WrapPanel>
 
                                 <WrapPanel HorizontalAlignment="Right" 
-                                           Margin="2">
+                                           Margin="0,2,2.4,2.4" Grid.Column="1">
                                     <Label Content="Optimisation dates:"/>
                                     <ComboBox Width="200"
                                               SelectedIndex="{Binding SelectedReportDateBorder}"
                                               ItemsSource="{Binding ReportDateBorders}"/>
                                 </WrapPanel>
-                                <Grid Grid.Row="1">
+                                <Grid Grid.ColumnSpan="2" Margin="0,30,0.4,-1.2" Grid.RowSpan="2">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition/>
                                         <ColumnDefinition Width="400"/>
@@ -527,6 +538,8 @@
                                                                 DisplayMemberBinding="{Binding Till}"/>
                                                 <GridViewColumn Header="Sort by"
                                                                 DisplayMemberBinding="{Binding SortBy}"/>
+                                                <GridViewColumn Header="Custom"
+                                                                DisplayMemberBinding="{Binding CustomCoef}"/>
                                                 <GridViewColumn Header="Payoff"
                                                                 DisplayMemberBinding="{Binding Payoff}"/>
                                                 <GridViewColumn Header="Profit pactor"

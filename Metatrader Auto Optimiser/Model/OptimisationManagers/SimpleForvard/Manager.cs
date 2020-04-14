@@ -512,8 +512,9 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
             });
 
             // Вложенная функция запускающая тесты
-            bool Test(DateBorders Border, List<OptimisationResult> optimisationResults, List<OptimisationResult> results)
+            bool Test(DateBorders Border, List<OptimisationResult> optimisationResults, List<OptimisationResult> results, out Dictionary<string, string> botParams)
             {
+                botParams = new Dictionary<string, string>();
                 if (Border == null)
                     return false;
 
@@ -531,6 +532,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
 
                 // Получение лучшего результата оптимизации
                 OptimisationResult result = optimisationResults.First();
+                botParams = result.report.BotParams;
 
                 // Установка параметров робота для тестов
                 for (int i = 0; i < optimiserInputData.BotParams.Count; i++)
@@ -612,7 +614,8 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
                     n++;
 
                     List<OptimisationResult> optimisationResults = GetOptimisationResult(item.Key);
-                    bool success = Test((isForward ? item.Value : item.Key), optimisationResults, results);
+                    
+                    bool success = Test((isForward ? item.Value : item.Key), optimisationResults, results, out Dictionary<string, string> botParams);
                     if (success && !isSaveData)
                         isSaveData = true;
                     if (success && optimiserSettings.ReplaceDates)
@@ -622,6 +625,11 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
                         if (_results.Count > 0)
                         {
                             var data = _results[0];
+                            // В новом варианте выгрузке результатов оптимизации может не быть параметров робота, 
+                            // по этому они задаются здесь из тех что были отобраны 
+                            if (data.report.BotParams.Count == 0)
+                                data.report.BotParams = botParams;
+
                             data.report.DateBorders = (isForward ? item.Value : item.Key);
                             results.Add(data);
                         }
