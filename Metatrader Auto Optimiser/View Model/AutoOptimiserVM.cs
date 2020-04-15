@@ -139,10 +139,14 @@ namespace Metatrader_Auto_Optimiser.View_Model
             // Коллбек нажатия на кнопку созранения или же напротив загрузки файла с результатами выбора форвардных и исторических диаппазонов
             SaveOrLoadDates = new RelayCommand(_SaveOrLoadDates);
 
+            // Коллбек нажатия кнопки автоматического формирования дат оптимизаций
             AutosetDateBorder = new RelayCommand((object o)=> 
             { 
                 autoFillInDateBorders.Open(); 
             });
+
+            // Коллбек нажатия кнопки отчистки результатов оптимизации из памяти
+            ClearLoadedResults = new RelayCommand((object o) => { model.ClearResults(); });
             #endregion
         }
 
@@ -156,7 +160,8 @@ namespace Metatrader_Auto_Optimiser.View_Model
             model.PBUpdate -= Model_PBUpdate;
             model.ThrowException -= Model_ThrowException;
             model.PropertyChanged -= Model_PropertyChanged;
-            AutoFillInDateBordersCreator.Model.DateBorders += Model_DateBorders;
+
+            AutoFillInDateBordersCreator.Model.DateBorders -= Model_DateBorders;
             autoFillInDateBorders.Close();
         }
 
@@ -223,7 +228,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
                 });
 
                 // Уведомляем о завершении загрузки данных
-                System.Windows.MessageBox.Show("Report params where updated");
+                // System.Windows.MessageBox.Show("Report params where updated");
             }
 
             // Либо фильтрация либо сортировка проходов оптимизации
@@ -772,6 +777,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
         /// Коллбек для кнопки загрузки диаппазона дат
         /// </summary>
         public ICommand LoadResults { get; }
+        public ICommand ClearLoadedResults { get; }
 
         #region Selected saved optimisation
         /// <summary>

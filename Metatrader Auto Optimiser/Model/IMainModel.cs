@@ -60,6 +60,10 @@ namespace Metatrader_Auto_Optimiser.Model
 
         #region Methods
         /// <summary>
+        /// Отчистить результаты оптимизаций загруженные в память
+        /// </summary>
+        void ClearResults();
+        /// <summary>
         /// Метод загружающий ранее созраненные результаты оптимизаций
         /// </summary>
         /// <param name="optimisationName">Имя требуемого отчета</param>

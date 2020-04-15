@@ -164,6 +164,7 @@ namespace ReportManager
         {
             ReportItem = new ReportItem();
         }
+        public static void SetReportItem(ReportItem item) { ReportItem = item; }
         /// <summary>
         /// Добавление параметра робота
         /// </summary>

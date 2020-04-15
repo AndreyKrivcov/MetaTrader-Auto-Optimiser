@@ -82,6 +82,7 @@ namespace Metatrader_Auto_Optimiser.Model
             SaveOptimisations(optimiser);
             LoadSavedOptimisation(optimiser.OptimiserWorkingDirectory);
             OptimisationStoped();
+            Optimiser.ClearOptimiser();
         }
         /// <summary>
         /// Метод созраняющий оптимизации в локальной директории
@@ -314,6 +315,7 @@ namespace Metatrader_Auto_Optimiser.Model
                 // Отписываемся от событий прошлого оптимизатора
                 Optimiser.ProcessStatus -= Optimiser_ProcessStatus;
                 Optimiser.OptimisationProcessFinished -= Optimiser_OptimisationProcessFinished;
+                Optimiser.ClearOptimiser();
 
                 // Создаем новый оптимизатор и копируем старый менеджер терминалла
                 Optimiser = optimiserCreators.First(x => x.Name == optimiserName).Create(Optimiser.TerminalManager);
@@ -460,13 +462,7 @@ namespace Metatrader_Auto_Optimiser.Model
             #endregion
 
             // Отчистка ранее созраненных результатов
-            AllOptimisationResults.AllOptimisationResults.Clear();
-            AllOptimisationResults = new ReportData
-            {
-                AllOptimisationResults = new Dictionary<DateBorders, List<OptimisationResult>>()
-            };
-            HistoryOptimisations.Clear();
-            ForwardOptimisations.Clear();
+            ClearOptimisationFields();
 
             // ЗАпуск вторичного потока с загрузкой результатов из файлов
             await Task.Run(() =>
@@ -559,13 +555,7 @@ namespace Metatrader_Auto_Optimiser.Model
                 catch (Exception e)
                 {
                     // В случае ошибки все чистим
-                    HistoryOptimisations.Clear();
-                    ForwardOptimisations.Clear();
-                    AllOptimisationResults.AllOptimisationResults.Clear();
-                    AllOptimisationResults = new ReportData
-                    {
-                        AllOptimisationResults = new Dictionary<DateBorders, List<OptimisationResult>>()
-                    };
+                    ClearOptimisationFields();
 
                     ThrowException(e.Message);
                 }
@@ -574,6 +564,26 @@ namespace Metatrader_Auto_Optimiser.Model
             PBUpdate(null, 0);
 
             // Информируем графику о произведенной перезаписи результатов оптимизации
+            OnPropertyChanged("AllOptimisationResults");
+            OnPropertyChanged("ForwardOptimisations");
+            OnPropertyChanged("HistoryOptimisations");
+        }
+        /// <summary>
+        /// Clear fields with optimisations
+        /// </summary>
+        void ClearOptimisationFields()
+        {
+            HistoryOptimisations.Clear();
+            ForwardOptimisations.Clear();
+            AllOptimisationResults.AllOptimisationResults.Clear();
+            AllOptimisationResults = new ReportData
+            {
+                AllOptimisationResults = new Dictionary<DateBorders, List<OptimisationResult>>()
+            };
+        }
+        public void ClearResults()
+        {
+            ClearOptimisationFields();
             OnPropertyChanged("AllOptimisationResults");
             OnPropertyChanged("ForwardOptimisations");
             OnPropertyChanged("HistoryOptimisations");
@@ -922,7 +932,8 @@ namespace Metatrader_Auto_Optimiser.Model
                 {
                     using (StreamWriter writer = new StreamWriter(pathToFile))
                     {
-                        string headders = "From;Till;Payoff;Profit factor;Recovery factor;Total trades;PL;DD;Altman Z Score;" +
+                        string headders = "From;Till;Custom;Payoff;Profit factor;Average profit factor;Recovery factor;" +
+                                          "Average recovery factor;Total trades;PL;DD;Altman Z Score;" +
                                           "VaR 90;VaR 95;VaR 99;Mx;Std;Total profit;Total loose;Total profit trades;" +
                                           "Total loose trades;Consecutive wins;Consecutive loose;" +
                                           "Mn Profit;Mn loose;Mn profit trades;Mn loose trades;" +
@@ -949,9 +960,12 @@ namespace Metatrader_Auto_Optimiser.Model
 
                                 string line = $"{item.report.DateBorders.From.ToString("dd.MM.yyyy HH:mm:ss")};" +
                                               $"{item.report.DateBorders.Till.ToString("dd.MM.yyyy HH:mm:ss")};" +
+                                              $"{item.report.OptimisationCoefficients.Custom};" +
                                               $"{item.report.OptimisationCoefficients.Payoff};" +
                                               $"{item.report.OptimisationCoefficients.ProfitFactor};" +
+                                              $"{item.report.OptimisationCoefficients.AverageProfitFactor};" +
                                               $"{item.report.OptimisationCoefficients.RecoveryFactor};" +
+                                              $"{item.report.OptimisationCoefficients.AverageRecoveryFactor};" +
                                               $"{item.report.OptimisationCoefficients.TotalTrades};" +
                                               $"{item.report.OptimisationCoefficients.PL};" +
                                               $"{item.report.OptimisationCoefficients.DD};" +

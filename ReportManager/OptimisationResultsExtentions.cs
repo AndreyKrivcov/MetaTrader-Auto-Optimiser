@@ -630,36 +630,7 @@ namespace ReportManager
         {
             try
             {
-                foreach (var param in report.BotParams)
-                {
-                    ReportWriter.AppendBotParam(param.Key, param.Value);
-                }
-                ReportWriter.AppendMainCoef(GetResult(ReportManager.SortBy.Custom),
-                                            GetResult(ReportManager.SortBy.Payoff),
-                                            GetResult(ReportManager.SortBy.ProfitFactor),
-                                            GetResult(ReportManager.SortBy.AverageProfitFactor),
-                                            GetResult(ReportManager.SortBy.RecoveryFactor),
-                                            GetResult(ReportManager.SortBy.AverageRecoveryFactor),
-                                            (int)GetResult(ReportManager.SortBy.TotalTrades),
-                                            GetResult(ReportManager.SortBy.PL),
-                                            GetResult(ReportManager.SortBy.DD),
-                                            GetResult(ReportManager.SortBy.AltmanZScore));
-
-                ReportWriter.AppendVaR(GetResult(ReportManager.SortBy.Q_90), GetResult(ReportManager.SortBy.Q_95),
-                                       GetResult(ReportManager.SortBy.Q_99), GetResult(ReportManager.SortBy.Mx),
-                                       GetResult(ReportManager.SortBy.Std));
-
-                ReportWriter.AppendMaxPLDD(GetResult(ReportManager.SortBy.ProfitFactor), GetResult(ReportManager.SortBy.MaxDD),
-                                          (int)GetResult(ReportManager.SortBy.MaxProfitTotalTrades),
-                                          (int)GetResult(ReportManager.SortBy.MaxDDTotalTrades),
-                                          (int)GetResult(ReportManager.SortBy.MaxProfitConsecutivesTrades),
-                                          (int)GetResult(ReportManager.SortBy.MaxDDConsecutivesTrades));
-
-                foreach (var day in report.OptimisationCoefficients.TradingDays)
-                {
-                    ReportWriter.AppendDay((int)day.Key, day.Value.Profit.Value, day.Value.Profit.Value,
-                                           day.Value.Profit.Trades, day.Value.DD.Trades);
-                }
+                ReportWriter.SetReportItem(report);
 
                 ReportWriter.Write(pathToBot, currency, balance, laverage, pathToFile, report.Symbol, report.TF,
                                    report.DateBorders.From.DTToUnixDT(), report.DateBorders.Till.DTToUnixDT());
