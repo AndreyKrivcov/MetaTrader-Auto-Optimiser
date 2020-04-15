@@ -26,4 +26,14 @@ namespace Metatrader_Auto_Optimiser.View_Model
 
         public ICommand Set { get; }
     }
+
+    class StepItem
+    {
+        public StepItem(OptimisationType type)
+        {
+            Type = type;
+        }
+        public OptimisationType Type { get; }
+        public uint Value { get; set; }
+    }
 }

@@ -573,13 +573,18 @@ namespace Metatrader_Auto_Optimiser.Model
         /// </summary>
         void ClearOptimisationFields()
         {
-            HistoryOptimisations.Clear();
-            ForwardOptimisations.Clear();
-            AllOptimisationResults.AllOptimisationResults.Clear();
-            AllOptimisationResults = new ReportData
+            if(HistoryOptimisations.Count > 0)
+                HistoryOptimisations.Clear();
+            if(ForwardOptimisations.Count > 0)
+                ForwardOptimisations.Clear();
+            if (AllOptimisationResults.AllOptimisationResults.Count > 0)
             {
-                AllOptimisationResults = new Dictionary<DateBorders, List<OptimisationResult>>()
-            };
+                AllOptimisationResults.AllOptimisationResults.Clear();
+                AllOptimisationResults = new ReportData
+                {
+                    AllOptimisationResults = new Dictionary<DateBorders, List<OptimisationResult>>()
+                };
+            }
         }
         public void ClearResults()
         {
@@ -678,6 +683,7 @@ namespace Metatrader_Auto_Optimiser.Model
             {
                 try
                 {
+
                     DirectoryInfo cachDir = Optimiser.TerminalManager.TerminalChangeableDirectory
                                                              .GetDirectory("Tester")
                                                              .GetDirectory("cache", true);
@@ -686,6 +692,7 @@ namespace Metatrader_Auto_Optimiser.Model
                     cachDir.GetFiles().ToList()
                            .ForEach(x => x.MoveTo(Path.Combine(cacheCopy.FullName, x.Name)));
 
+                    ClearResults();
                     Optimiser.ClearOptimiser();
                     Optimiser.Start(optimiserInputData,
                         Path.Combine(terminalDirectory.Common.FullName,

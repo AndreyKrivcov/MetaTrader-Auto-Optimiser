@@ -765,6 +765,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
         public ICommand AutosetDateBorder { get; }
         private void Model_DateBorders(List<KeyValuePair<OptimisationType, DateTime[]>> obj)
         {
+            DateBorders.Clear();
             foreach (var item in obj)
                 _AddDateBorder(item.Value[0], item.Value[1], item.Key);
         }
