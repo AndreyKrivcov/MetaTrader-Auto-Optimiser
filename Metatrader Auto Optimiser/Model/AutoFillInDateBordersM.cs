@@ -32,7 +32,7 @@ namespace Metatrader_Auto_Optimiser.Model
         public void Calculate(DateTime From, DateTime Till, uint history, uint forward)
         {
             if (From >= Till)
-                return;
+                throw new ArgumentException("Date From must be less then date Till");
 
             List<KeyValuePair<OptimisationType, DateTime[]>> data = new List<KeyValuePair<OptimisationType, DateTime[]>>();
 
@@ -58,6 +58,9 @@ namespace Metatrader_Auto_Optimiser.Model
 
                 type = type == OptimisationType.History ? OptimisationType.Forward : OptimisationType.History;
             }
+
+            if (data.Count == 0)
+                throw new ArgumentException("Can`t create any date borders with setted In sample (History) step");
 
             DateBorders?.Invoke(data);
         }

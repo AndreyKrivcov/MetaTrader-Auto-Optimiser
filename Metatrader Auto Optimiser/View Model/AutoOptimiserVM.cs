@@ -71,10 +71,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             SetBotParams(settings.SelectedParam, false);
 
             #region Subwindows
-            autoFillInDateBorders = new SubFormKeeper(
-                () => { return new AutoFillInDateBorders(); },
-                (Window w) => { },
-                (Window w)=> { });
+            autoFillInDateBorders = new SubFormKeeper(() => { return new AutoFillInDateBorders(); });
             AutoFillInDateBordersCreator.Model.DateBorders += Model_DateBorders;
             #endregion
 
@@ -743,7 +740,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             try
             {
                 DateBorders border = new DateBorders(From,Till);
-                if (!DateBorders.Any(x => x.DateBorders == border))
+                if (!DateBorders.Where(x=>x.BorderType == DateBorderType).Any(y => y.DateBorders == border))
                 {
                     DateBorders.Add(new DateBordersItem(border, _DeleteDateBorder,DateBorderType));
                 }
@@ -1171,7 +1168,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
     #region Entities for GUI
     class SubFormKeeper
     {
-        public SubFormKeeper(Func<Window> createWindow, Action<Window> subscribe_events, Action<Window> unSubscribe_events)
+        public SubFormKeeper(Func<Window> createWindow, Action<Window> subscribe_events = null, Action<Window> unSubscribe_events = null)
         {
             creator = createWindow;
             Subscribe_events = subscribe_events;
@@ -1196,7 +1193,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
                     window.Show();
 
                 window.Closed += Window_Closed;
-                Subscribe_events(window);
+                Subscribe_events?.Invoke(window);
             }
             else
                 window.Activate();
@@ -1205,7 +1202,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
         private void Window_Closed(object sender, EventArgs e)
         {
             window.Closed -= Window_Closed;
-            UnSubscribe_events(window);
+            UnSubscribe_events?.Invoke(window);
             window = null;
         }
         public void Close()
