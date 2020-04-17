@@ -573,9 +573,9 @@ namespace Metatrader_Auto_Optimiser.Model
         /// </summary>
         void ClearOptimisationFields()
         {
-            if(HistoryOptimisations.Count > 0)
+            if (HistoryOptimisations.Count > 0)
                 HistoryOptimisations.Clear();
-            if(ForwardOptimisations.Count > 0)
+            if (ForwardOptimisations.Count > 0)
                 ForwardOptimisations.Clear();
             if (AllOptimisationResults.AllOptimisationResults.Count > 0)
             {
@@ -629,7 +629,11 @@ namespace Metatrader_Auto_Optimiser.Model
         /// <param name="pathToSavingFile">Путь к созраняемому файлу</param>
         public void SaveToCSVOptimisations(DateBorders dateBorders, string pathToSavingFile)
         {
-            CreateCsv(dateBorders, pathToSavingFile);
+            List<OptimisationResult> results = new List<OptimisationResult>();
+            if (dateBorders != null)
+                results.AddRange(AllOptimisationResults.AllOptimisationResults[dateBorders]);
+
+            CreateCsv(results, pathToSavingFile, true);
         }
         /// <summary>
         /// Созранение исторических и форвардных тестов в файл
@@ -637,7 +641,9 @@ namespace Metatrader_Auto_Optimiser.Model
         /// <param name="pathToSavingFile">Путь к сохраняемому файлу</param>
         public void SaveToCSVSelectedOptimisations(string pathToSavingFile)
         {
-            CreateCsv(null, pathToSavingFile);
+            CreateCsv(HistoryOptimisations, $"History_{pathToSavingFile}", false);
+            CreateCsv(ForwardOptimisations, $"Forward_{pathToSavingFile}", true);
+
         }
         /// <summary>
         /// Запуск оптимизаций
@@ -922,32 +928,16 @@ namespace Metatrader_Auto_Optimiser.Model
         /// </summary>
         /// <param name="borders"></param>
         /// <param name="pathToFile"></param>
-        private async void CreateCsv(DateBorders borders, string pathToFile)
+        private async void CreateCsv(List<OptimisationResult> results, string pathToFile, bool is_notify)
         {
-            List<OptimisationResult> results;
-            if (borders != null)
-                results = new List<OptimisationResult>(AllOptimisationResults.AllOptimisationResults[borders]);
-            else
-            {
-                results = new List<OptimisationResult>(HistoryOptimisations);
-                results.AddRange(ForwardOptimisations);
-            }
-
             if (results.Count > 0)
             {
                 try
                 {
                     using (StreamWriter writer = new StreamWriter(pathToFile))
                     {
-                        string headders = "From;Till;Custom;Payoff;Profit factor;Average profit factor;Recovery factor;" +
-                                          "Average recovery factor;Total trades;PL;DD;Altman Z Score;" +
-                                          "VaR 90;VaR 95;VaR 99;Mx;Std;Total profit;Total loose;Total profit trades;" +
-                                          "Total loose trades;Consecutive wins;Consecutive loose;" +
-                                          "Mn Profit;Mn loose;Mn profit trades;Mn loose trades;" +
-                                          "Tu Profit;Tu loose;Tu profit trades;Tu loose trades;" +
-                                          "We Profit;We loose;We profit trades;We loose trades;" +
-                                          "Th Profit;Th loose;Th profit trades;Th loose trades;" +
-                                          "Fr Profit;Fr loose;Fr profit trades;Fr loose trades;";
+                        string[] names = Enum.GetNames(typeof(SortBy));
+                        string headders = $"From;To;{string.Join(";", names.Select(x => x.Replace("_", " ")))};";
 
                         await Task.Run(() =>
                         {
@@ -966,53 +956,11 @@ namespace Metatrader_Auto_Optimiser.Model
                                 }
 
                                 string line = $"{item.report.DateBorders.From.ToString("dd.MM.yyyy HH:mm:ss")};" +
-                                              $"{item.report.DateBorders.Till.ToString("dd.MM.yyyy HH:mm:ss")};" +
-                                              $"{item.report.OptimisationCoefficients.Custom};" +
-                                              $"{item.report.OptimisationCoefficients.Payoff};" +
-                                              $"{item.report.OptimisationCoefficients.ProfitFactor};" +
-                                              $"{item.report.OptimisationCoefficients.AverageProfitFactor};" +
-                                              $"{item.report.OptimisationCoefficients.RecoveryFactor};" +
-                                              $"{item.report.OptimisationCoefficients.AverageRecoveryFactor};" +
-                                              $"{item.report.OptimisationCoefficients.TotalTrades};" +
-                                              $"{item.report.OptimisationCoefficients.PL};" +
-                                              $"{item.report.OptimisationCoefficients.DD};" +
-                                              $"{item.report.OptimisationCoefficients.AltmanZScore};" +
-                                              $"{item.report.OptimisationCoefficients.VaR.Q_90};" +
-                                              $"{item.report.OptimisationCoefficients.VaR.Q_95};" +
-                                              $"{item.report.OptimisationCoefficients.VaR.Q_99};" +
-                                              $"{item.report.OptimisationCoefficients.VaR.Mx};" +
-                                              $"{item.report.OptimisationCoefficients.VaR.Std};" +
-                                              $"{item.report.OptimisationCoefficients.MaxPLDD.Profit.Value};" +
-                                              $"{item.report.OptimisationCoefficients.MaxPLDD.DD.Value};" +
-                                              $"{item.report.OptimisationCoefficients.MaxPLDD.Profit.TotalTrades};" +
-                                              $"{item.report.OptimisationCoefficients.MaxPLDD.DD.TotalTrades};" +
-                                              $"{item.report.OptimisationCoefficients.MaxPLDD.Profit.ConsecutivesTrades};" +
-                                              $"{item.report.OptimisationCoefficients.MaxPLDD.DD.ConsecutivesTrades};" +
-
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Monday].Profit.Value};" +
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Monday].DD.Value};" +
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Monday].Profit.Trades};" +
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Monday].DD.Trades};" +
-
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Tuesday].Profit.Value};" +
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Thursday].DD.Value};" +
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Thursday].Profit.Trades};" +
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Thursday].DD.Trades};" +
-
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Wednesday].Profit.Value};" +
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Wednesday].DD.Value};" +
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Wednesday].Profit.Trades};" +
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Wednesday].DD.Trades};" +
-
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Thursday].Profit.Value};" +
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Thursday].DD.Value};" +
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Thursday].Profit.Trades};" +
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Thursday].DD.Trades};" +
-
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Friday].Profit.Value};" +
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Friday].DD.Value};" +
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Friday].Profit.Trades};" +
-                                              $"{item.report.OptimisationCoefficients.TradingDays[DayOfWeek.Friday].DD.Trades};";
+                                             $"{item.report.DateBorders.Till.ToString("dd.MM.yyyy HH:mm:ss")};";
+                                foreach (var param in names)
+                                {
+                                    line += $"{item.GetResult((SortBy)Enum.Parse(typeof(SortBy), param))};";
+                                }
 
                                 foreach (var param in item.report.BotParams)
                                 {
@@ -1023,14 +971,15 @@ namespace Metatrader_Auto_Optimiser.Model
                             }
                         });
                     }
+
+                    if (is_notify)
+                        OnPropertyChanged("CSV");
                 }
                 catch (Exception e)
                 {
                     ThrowException(e.Message);
                 }
             }
-
-            OnPropertyChanged("CSV");
         }
         #endregion
     }
