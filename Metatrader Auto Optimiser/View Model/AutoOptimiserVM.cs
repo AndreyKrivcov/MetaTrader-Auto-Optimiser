@@ -87,7 +87,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
 
             // Коллбек кнопки запуска / остановки процесса оптимизации
             StartStopOptimisation = new RelayCommand(_StartStopOptimisation);
-            
+
             // Список параметров для ComboBox с выбором типа оптимизации
             DateBorderTypes = GetEnumNames<OptimisationType>();
             // Коллбек добавления границы дат оптимизации
@@ -137,9 +137,15 @@ namespace Metatrader_Auto_Optimiser.View_Model
             SaveOrLoadDates = new RelayCommand(_SaveOrLoadDates);
 
             // Коллбек нажатия кнопки автоматического формирования дат оптимизаций
-            AutosetDateBorder = new RelayCommand((object o)=> 
-            { 
-                autoFillInDateBorders.Open(); 
+            AutosetDateBorder = new RelayCommand((object o) =>
+            {
+                autoFillInDateBorders.Open();
+            });
+
+            // Коллбек отчистки границ дат 
+            ClearDateBorders = new RelayCommand((object o) =>
+            {
+                DateBorders.Clear();
             });
 
             // Коллбек нажатия кнопки отчистки результатов оптимизации из памяти
@@ -201,7 +207,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
                 });
             }
 
-            if(e.PropertyName == "ClearResults")
+            if (e.PropertyName == "ClearResults")
             {
                 OptimisationResult result = new OptimisationResult();
 
@@ -717,10 +723,10 @@ namespace Metatrader_Auto_Optimiser.View_Model
         {
             try
             {
-                DateBorders border = new DateBorders(From,Till);
-                if (!DateBorders.Where(x=>x.BorderType == DateBorderType).Any(y => y.DateBorders == border))
+                DateBorders border = new DateBorders(From, Till);
+                if (!DateBorders.Where(x => x.BorderType == DateBorderType).Any(y => y.DateBorders == border))
                 {
-                    DateBorders.Add(new DateBordersItem(border, _DeleteDateBorder,DateBorderType));
+                    DateBorders.Add(new DateBordersItem(border, _DeleteDateBorder, DateBorderType));
                 }
             }
             catch (Exception e)
@@ -744,6 +750,8 @@ namespace Metatrader_Auto_Optimiser.View_Model
             foreach (var item in obj)
                 _AddDateBorder(item.Value[0], item.Value[1], item.Key);
         }
+
+        public ICommand ClearDateBorders { get; }
 
         private readonly SubFormKeeper autoFillInDateBorders;
         #endregion

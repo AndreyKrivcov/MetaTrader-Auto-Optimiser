@@ -335,6 +335,9 @@
                                 <Button Content="Autoset"
                                         Margin="2,0,0,0"
                                         Command="{Binding AutosetDateBorder}"/>
+                                <Button Content="Clear"
+                                        Margin="2,0,0,0"
+                                        Command="{Binding ClearDateBorders}"/>
                             </WrapPanel>
 
                             <ListView Grid.Row="1"
