@@ -640,8 +640,8 @@ namespace Metatrader_Auto_Optimiser.Model
             List<View_Model.ReportItem> results = new List<View_Model.ReportItem>();
             if (dateBorders != null)
                 results.AddRange(AllOptimisationResults.AllOptimisationResults[dateBorders].Select(x => (View_Model.ReportItem)x));
-
-            CreateCsv(results, pathToSavingFile, true);
+            
+            CreateCsv(results, Path.Combine(Path.GetDirectoryName(pathToSavingFile), $"{Path.GetFileNameWithoutExtension(pathToSavingFile)}.csv"), true);
         }
         /// <summary>
         /// Созранение исторических и форвардных тестов в файл
@@ -649,8 +649,11 @@ namespace Metatrader_Auto_Optimiser.Model
         /// <param name="pathToSavingFile">Путь к сохраняемому файлу</param>
         public void SaveToCSVSelectedOptimisations(string pathToSavingFile)
         {
-            CreateCsv(HistoryOptimisations, $"History_{pathToSavingFile}", false);
-            CreateCsv(ForwardOptimisations, $"Forward_{pathToSavingFile}", true);
+            string file_name = Path.GetFileNameWithoutExtension(pathToSavingFile);
+            string path = Path.GetDirectoryName(pathToSavingFile);
+
+            CreateCsv(HistoryOptimisations, Path.Combine(path, $"History_{file_name}.csv"), false);
+            CreateCsv(ForwardOptimisations, Path.Combine(path, $"Forward_{file_name}.csv"), true);
         }
         /// <summary>
         /// Запуск оптимизаций
