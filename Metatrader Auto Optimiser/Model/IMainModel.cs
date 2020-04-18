@@ -3,6 +3,7 @@ using Metatrader_Auto_Optimiser.Model.OptimisationManagers;
 using ReportManager;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 
 namespace Metatrader_Auto_Optimiser.Model
@@ -36,11 +37,11 @@ namespace Metatrader_Auto_Optimiser.Model
         /// <summary>
         /// Форвардные тесты
         /// </summary>
-        List<OptimisationResult> ForwardOptimisations { get; }
+        ObservableCollection<Metatrader_Auto_Optimiser.View_Model.ReportItem> ForwardOptimisations { get; }
         /// <summary>
         /// Исторические тесты
         /// </summary>
-        List<OptimisationResult> HistoryOptimisations { get; }
+        ObservableCollection<Metatrader_Auto_Optimiser.View_Model.ReportItem> HistoryOptimisations { get; }
         #endregion
 
         #region Events

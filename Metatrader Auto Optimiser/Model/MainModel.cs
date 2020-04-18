@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -50,6 +51,12 @@ namespace Metatrader_Auto_Optimiser.Model
             Optimiser.ProcessStatus -= Optimiser_ProcessStatus;
             Optimiser.OptimisationProcessFinished -= Optimiser_OptimisationProcessFinished;
         }
+
+        /// <summary>
+        /// Диспатчер основного окна
+        /// </summary>
+        private readonly System.Windows.Threading.Dispatcher dispatcher =
+            System.Windows.Application.Current.Dispatcher;
 
         /// <summary>
         /// Коллбек события обновления прогресс бара
@@ -255,11 +262,11 @@ namespace Metatrader_Auto_Optimiser.Model
         /// <summary>
         /// Результаты форвардных тестов
         /// </summary>
-        public List<OptimisationResult> ForwardOptimisations { get; private set; } = new List<OptimisationResult>();
+        public ObservableCollection<View_Model.ReportItem> ForwardOptimisations { get; } = new ObservableCollection<View_Model.ReportItem>();
         /// <summary>
         /// Результаты исторических тестов
         /// </summary>
-        public List<OptimisationResult> HistoryOptimisations { get; private set; } = new List<OptimisationResult>();
+        public ObservableCollection<View_Model.ReportItem> HistoryOptimisations { get; } = new ObservableCollection<View_Model.ReportItem>();
 
         #endregion
 
@@ -525,18 +532,20 @@ namespace Metatrader_Auto_Optimiser.Model
 
                         // СОзраняем историю исторических тестов и производим проверку на корректность настроек тестера
                         PBUpdate("History.xml", step * 3);
-                        HistoryOptimisations = GetItems(files.First(x => x.Name == "History.xml"),
-                                                        out expert, out deposit,
-                                                        out currency, out laverage).OrderBy(x => x.report.DateBorders).ToList();
+                        dispatcher.Invoke(() => GetItems(files.First(x => x.Name == "History.xml"),
+                                 out expert, out deposit,
+                                 out currency, out laverage).OrderBy(x => x.report.DateBorders)
+                                 .ToList().ForEach(x => HistoryOptimisations.Add(x)));
                         #region Check
                         CompareTestersettings();
                         #endregion
 
                         // СОзраняем историю форвардных тестов и производим проверку на корректность настроек тестера
                         PBUpdate("Forward.xml", step * 4);
-                        ForwardOptimisations = GetItems(files.First(x => x.Name == "Forward.xml"),
-                                                        out expert, out deposit,
-                                                        out currency, out laverage).OrderBy(x => x.report.DateBorders).ToList();
+                        dispatcher.Invoke(() => GetItems(files.First(x => x.Name == "Forward.xml"),
+                                 out expert, out deposit,
+                                 out currency, out laverage).OrderBy(x => x.report.DateBorders)
+                                 .ToList().ForEach(x => ForwardOptimisations.Add(x)));
                         #region Check
                         CompareTestersettings();
                         if (HistoryOptimisations.Count == 0)
@@ -565,8 +574,6 @@ namespace Metatrader_Auto_Optimiser.Model
 
             // Информируем графику о произведенной перезаписи результатов оптимизации
             OnPropertyChanged("AllOptimisationResults");
-            OnPropertyChanged("ForwardOptimisations");
-            OnPropertyChanged("HistoryOptimisations");
         }
         /// <summary>
         /// Clear fields with optimisations
@@ -574,9 +581,9 @@ namespace Metatrader_Auto_Optimiser.Model
         void ClearOptimisationFields()
         {
             if (HistoryOptimisations.Count > 0)
-                HistoryOptimisations.Clear();
+                dispatcher.Invoke(() => HistoryOptimisations.Clear());
             if (ForwardOptimisations.Count > 0)
-                ForwardOptimisations.Clear();
+                dispatcher.Invoke(() => ForwardOptimisations.Clear());
             if (AllOptimisationResults.AllOptimisationResults.Count > 0)
             {
                 AllOptimisationResults.AllOptimisationResults.Clear();
@@ -585,13 +592,14 @@ namespace Metatrader_Auto_Optimiser.Model
                     AllOptimisationResults = new Dictionary<DateBorders, List<OptimisationResult>>()
                 };
             }
+
+            GC.Collect();
         }
         public void ClearResults()
         {
             ClearOptimisationFields();
             OnPropertyChanged("AllOptimisationResults");
-            OnPropertyChanged("ForwardOptimisations");
-            OnPropertyChanged("HistoryOptimisations");
+            OnPropertyChanged("ClearResults");
         }
         /// <summary>
         /// Чтение файла с результатами оптимизаций
@@ -629,9 +637,9 @@ namespace Metatrader_Auto_Optimiser.Model
         /// <param name="pathToSavingFile">Путь к созраняемому файлу</param>
         public void SaveToCSVOptimisations(DateBorders dateBorders, string pathToSavingFile)
         {
-            List<OptimisationResult> results = new List<OptimisationResult>();
+            List<View_Model.ReportItem> results = new List<View_Model.ReportItem>();
             if (dateBorders != null)
-                results.AddRange(AllOptimisationResults.AllOptimisationResults[dateBorders]);
+                results.AddRange(AllOptimisationResults.AllOptimisationResults[dateBorders].Select(x => (View_Model.ReportItem)x));
 
             CreateCsv(results, pathToSavingFile, true);
         }
@@ -643,7 +651,6 @@ namespace Metatrader_Auto_Optimiser.Model
         {
             CreateCsv(HistoryOptimisations, $"History_{pathToSavingFile}", false);
             CreateCsv(ForwardOptimisations, $"Forward_{pathToSavingFile}", true);
-
         }
         /// <summary>
         /// Запуск оптимизаций
@@ -928,9 +935,9 @@ namespace Metatrader_Auto_Optimiser.Model
         /// </summary>
         /// <param name="borders"></param>
         /// <param name="pathToFile"></param>
-        private async void CreateCsv(List<OptimisationResult> results, string pathToFile, bool is_notify)
+        private async void CreateCsv(IEnumerable<View_Model.ReportItem> results, string pathToFile, bool is_notify)
         {
-            if (results.Count > 0)
+            if (results.Count() > 0)
             {
                 try
                 {
@@ -948,21 +955,21 @@ namespace Metatrader_Auto_Optimiser.Model
                                 if (isFirst)
                                 {
                                     isFirst = false;
-                                    foreach (var param in item.report.BotParams)
+                                    foreach (var param in ((OptimisationResult)item).report.BotParams)
                                     {
                                         headders += $"{param.Key};";
                                     }
                                     writer.WriteLine(headders);
                                 }
 
-                                string line = $"{item.report.DateBorders.From.ToString("dd.MM.yyyy HH:mm:ss")};" +
-                                             $"{item.report.DateBorders.Till.ToString("dd.MM.yyyy HH:mm:ss")};";
+                                string line = $"{((OptimisationResult)item).report.DateBorders.From.ToString("dd.MM.yyyy HH:mm:ss")};" +
+                                             $"{((OptimisationResult)item).report.DateBorders.Till.ToString("dd.MM.yyyy HH:mm:ss")};";
                                 foreach (var param in names)
                                 {
-                                    line += $"{item.GetResult((SortBy)Enum.Parse(typeof(SortBy), param))};";
+                                    line += $"{((OptimisationResult)item).GetResult((SortBy)Enum.Parse(typeof(SortBy), param))};";
                                 }
 
-                                foreach (var param in item.report.BotParams)
+                                foreach (var param in ((OptimisationResult)item).report.BotParams)
                                 {
                                     line += $"{param.Value};";
                                 }

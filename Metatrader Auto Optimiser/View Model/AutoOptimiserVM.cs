@@ -110,7 +110,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             // Коллбек запуска теста по событию двойного клика на таблице с оптимизациями
             StartTestReport = new RelayCommand((object o) =>
             {
-                _StartTest(model.AllOptimisationResults.AllOptimisationResults[ReportDateBorders[SelectedReportDateBorder]], SelecterReportItem);
+                _StartTest(AllOptimisations, SelecterReportItem);
             });
             // Коллбек старта теста по событию двойного клика на таблице с историческими тестами
             StartTestHistory = new RelayCommand((object o) =>
@@ -201,6 +201,13 @@ namespace Metatrader_Auto_Optimiser.View_Model
                 });
             }
 
+            if(e.PropertyName == "ClearResults")
+            {
+                OptimisationResult result = new OptimisationResult();
+
+                FillInDataForReportItem(result);
+            }
+
             // Изменился список пройденных оптимизационных проходов
             if (e.PropertyName == "AllOptimisationResults")
             {
@@ -223,9 +230,6 @@ namespace Metatrader_Auto_Optimiser.View_Model
                     ReplaceBotFixedParam("Laverage", model.AllOptimisationResults.Laverage.ToString());
                     OnPropertyChanged("OptimiserSettingsForResults_fixed");
                 });
-
-                // Уведомляем о завершении загрузки данных
-                // System.Windows.MessageBox.Show("Report params where updated");
             }
 
             // Либо фильтрация либо сортировка проходов оптимизации
@@ -235,32 +239,6 @@ namespace Metatrader_Auto_Optimiser.View_Model
                 dispatcher.Invoke(() =>
                 {
                     SelectedReportDateBorder = SelectedReportDateBorder;
-                });
-            }
-
-            // Обновлены данные по форвардным оптимизациям
-            if (e.PropertyName == "ForwardOptimisations")
-            {
-                dispatcher.Invoke(() =>
-                {
-                    ForwardOptimisations.Clear();
-                    foreach (var item in model.ForwardOptimisations)
-                    {
-                        ForwardOptimisations.Add(new ReportItem(item));
-                    }
-                });
-            }
-
-            // Обновлены данные по историческим оптимизациям
-            if (e.PropertyName == "HistoryOptimisations")
-            {
-                dispatcher.Invoke(() =>
-                {
-                    HistoryOptimisations.Clear();
-                    foreach (var item in model.HistoryOptimisations)
-                    {
-                        HistoryOptimisations.Add(new ReportItem(item));
-                    }
                 });
             }
 
@@ -793,7 +771,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
         /// </summary>
         /// <param name="results">РЕзуьтаты оптимизаций</param>
         /// <param name="ind">Выбранный индекс</param>
-        private void _StartTest(List<OptimisationResult> results, int ind)
+        private void _StartTest(ObservableCollection<ReportItem> results, int ind)
         {
             try
             {
@@ -812,7 +790,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
                     TF = (ENUM_Timeframes)Enum.Parse(typeof(ENUM_Timeframes), OptimiserSettingsForResults_fixed.First(x => x.Key == "TF").Value),
                     SortingFlags = null,
                     CompareData = null,
-                    BotParams = results[ind].report.BotParams.Select(x => new ParamsItem { Variable = x.Key, Value = x.Value }).ToList()
+                    BotParams = ((OptimisationResult)results[ind]).report.BotParams.Select(x => new ParamsItem { Variable = x.Key, Value = x.Value }).ToList()
                 };
 
                 model.StartTest(optimiserInputData);
@@ -861,6 +839,13 @@ namespace Metatrader_Auto_Optimiser.View_Model
 
         #region All optimisations table
 
+        private void FillInDataForReportItem(OptimisationResult item)
+        {
+            FillInBotParams(item);
+            FillInDailyPL(item);
+            FillInMaxPLDD(item);
+        }
+
         /// <summary>
         /// Заполнение параметров робота
         /// </summary>
@@ -868,15 +853,17 @@ namespace Metatrader_Auto_Optimiser.View_Model
         private void FillInBotParams(OptimisationResult result)
         {
             SelectedBotParams.Clear();
-            foreach (var item in result.report.BotParams)
+
+            if (result.report.BotParams != null)
             {
-                SelectedBotParams.Add(item);
+                foreach (var item in result.report.BotParams)
+                    SelectedBotParams.Add(item);
             }
 
             ReplaceBotFixedParam("Symbol", result.report.Symbol);
             ReplaceBotFixedParam("TF", ((ENUM_Timeframes)result.report.TF).ToString());
-            TestFrom = result.report.DateBorders.From;
-            TestTill = result.report.DateBorders.Till;
+            TestFrom = (result.report.DateBorders != null ? result.report.DateBorders.From : DateTime.Now);
+            TestTill = (result.report.DateBorders != null ? result.report.DateBorders.Till : DateTime.Now);
             OnPropertyChanged("TestFrom");
             OnPropertyChanged("TestTill");
         }
@@ -888,9 +875,12 @@ namespace Metatrader_Auto_Optimiser.View_Model
         {
             KeyValuePair<DayOfWeek, DailyPLItem> GetItem(DayOfWeek day)
             {
-                return new KeyValuePair<DayOfWeek, DailyPLItem>(day, (result.report.OptimisationCoefficients.TradingDays.Count > 0 ?
+                if (result.report.OptimisationCoefficients.TradingDays != null)
+                    return new KeyValuePair<DayOfWeek, DailyPLItem>(day, (result.report.OptimisationCoefficients.TradingDays.Count > 0 ?
                                                                 new DailyPLItem(result.report.OptimisationCoefficients.TradingDays[day]) :
                                                                 null));
+                else
+                    return new KeyValuePair<DayOfWeek, DailyPLItem>(day, null);
             }
 
             TradingDays[0] = GetItem(DayOfWeek.Monday);
@@ -977,9 +967,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
                         .AllOptimisationResults[ReportDateBorders[SelectedReportDateBorder]]
                         .ElementAt(value);
 
-                    FillInBotParams(item);
-                    FillInDailyPL(item);
-                    FillInMaxPLDD(item);
+                    FillInDataForReportItem(item);
                 }
             }
         }
@@ -994,11 +982,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             {
                 _selectedForwardItem = value;
                 if (value > -1)
-                {
-                    FillInBotParams(model.ForwardOptimisations[value]);
-                    FillInDailyPL(model.ForwardOptimisations[value]);
-                    FillInMaxPLDD(model.ForwardOptimisations[value]);
-                }
+                    FillInDataForReportItem(model.ForwardOptimisations[value]);
             }
         }
         /// <summary>
@@ -1012,11 +996,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             {
                 _selectedHistoryItem = value;
                 if (value > -1)
-                {
-                    FillInBotParams(model.HistoryOptimisations[value]);
-                    FillInDailyPL(model.HistoryOptimisations[value]);
-                    FillInMaxPLDD(model.HistoryOptimisations[value]);
-                }
+                    FillInDataForReportItem(model.HistoryOptimisations[value]);
             }
         }
 
@@ -1102,11 +1082,11 @@ namespace Metatrader_Auto_Optimiser.View_Model
         /// <summary>
         /// Выбранные форвардные тесты
         /// </summary>
-        public ObservableCollection<ReportItem> ForwardOptimisations { get; } = new ObservableCollection<ReportItem>();
+        public ObservableCollection<ReportItem> ForwardOptimisations => model.ForwardOptimisations;
         /// <summary>
         /// Выбранные исторические тесты
         /// </summary>
-        public ObservableCollection<ReportItem> HistoryOptimisations { get; } = new ObservableCollection<ReportItem>();
+        public ObservableCollection<ReportItem> HistoryOptimisations => model.HistoryOptimisations;
 
         #endregion
 
@@ -1229,6 +1209,9 @@ namespace Metatrader_Auto_Optimiser.View_Model
         /// Эллемент отчета
         /// </summary>
         private readonly OptimisationResult result;
+
+        public static implicit operator ReportItem(OptimisationResult item) { return new ReportItem(item); }
+        public static implicit operator OptimisationResult(ReportItem data) { return data.result; }
 
         /// <summary>
         /// Дата "С"

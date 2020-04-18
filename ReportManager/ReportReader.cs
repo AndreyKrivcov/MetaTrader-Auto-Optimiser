@@ -162,14 +162,12 @@ namespace ReportManager
                         }
                     }
                 };
-                try
-                {
-                    Item.OptimisationCoefficients.Custom = Convert.ToDouble(result["Coefficients"].SelectSingleNode(SelectItem("Custom")).InnerText.Replace(",", "."), formatInfo);
-                }
-                catch (Exception)
-                {
+
+                var custom_item = result["Coefficients"].SelectSingleNode(SelectItem("Custom"));
+                if (custom_item != null)
+                    Item.OptimisationCoefficients.Custom = Convert.ToDouble(custom_item.InnerText.Replace(",", "."), formatInfo);
+                else
                     Item.OptimisationCoefficients.Custom = 0;
-                }
 
                 // Заполняем параметры робота
                 foreach (XmlNode item in result.ChildNodes)
@@ -450,7 +448,7 @@ namespace ReportManager
     {
         public double Payoff, ProfitFactor, AverageProfitFactor,
                       RecoveryFactor, AverageRecoveryFactor, PL, DD,
-                      AltmanZScore,Custom;
+                      AltmanZScore, Custom;
         public int TotalTrades;
         public VaRData VaR;
         public MaxPLDD MaxPLDD;
