@@ -439,6 +439,8 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
 
                 // Конфигурирование терминала перед запуском
                 TerminalManager.Config = GetConfig(optimiserInputData, setFileManager, item);
+                if (optimiserInputData.BotParams.Any(x => x.Variable == Fixed_Input_Settings.CloseTerminalFromBot))
+                    TerminalManager.Config.Tester.ShutdownTerminal = false;
                 // Запуск терминала и ожидание завершения его работы
                 if (TerminalManager.Run())
                 {
@@ -614,7 +616,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
                     n++;
 
                     List<OptimisationResult> optimisationResults = GetOptimisationResult(item.Key);
-                    
+
                     bool success = Test((isForward ? item.Value : item.Key), optimisationResults, results, out Dictionary<string, string> botParams);
                     if (success && !isSaveData)
                         isSaveData = true;
