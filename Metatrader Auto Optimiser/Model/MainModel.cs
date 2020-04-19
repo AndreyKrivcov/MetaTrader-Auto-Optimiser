@@ -50,8 +50,6 @@ namespace Metatrader_Auto_Optimiser.Model
 
             Optimiser.ProcessStatus -= Optimiser_ProcessStatus;
             Optimiser.OptimisationProcessFinished -= Optimiser_OptimisationProcessFinished;
-
-            OptimiserFunctions.RemoveTogleFile();
         }
 
         /// <summary>
@@ -59,7 +57,7 @@ namespace Metatrader_Auto_Optimiser.Model
         /// </summary>
         private readonly System.Windows.Threading.Dispatcher dispatcher =
             System.Windows.Application.Current.Dispatcher;
-        
+
         /// <summary>
         /// Коллбек события обновления прогресс бара
         /// </summary>
@@ -642,7 +640,7 @@ namespace Metatrader_Auto_Optimiser.Model
             List<View_Model.ReportItem> results = new List<View_Model.ReportItem>();
             if (dateBorders != null)
                 results.AddRange(AllOptimisationResults.AllOptimisationResults[dateBorders].Select(x => (View_Model.ReportItem)x));
-            
+
             CreateCsv(results, Path.Combine(Path.GetDirectoryName(pathToSavingFile), $"{Path.GetFileNameWithoutExtension(pathToSavingFile)}.csv"), true);
         }
         /// <summary>
@@ -712,6 +710,14 @@ namespace Metatrader_Auto_Optimiser.Model
 
                     ClearResults();
                     Optimiser.ClearOptimiser();
+
+                    int ind = optimiserInputData.BotParams.FindIndex(x => x.Variable == Fixed_Input_Settings.CloseTerminalFromBot);
+                    if (ind > -1)
+                    {
+                        var item = optimiserInputData.BotParams[ind];
+                        item.Variable = "true";
+                        optimiserInputData.BotParams[ind] = item;
+                    }
                     Optimiser.Start(optimiserInputData,
                         Path.Combine(terminalDirectory.Common.FullName,
                         $"{Path.GetFileNameWithoutExtension(optimiserInputData.RelativePathToBot)}_Report.xml"), dirPrefix);
