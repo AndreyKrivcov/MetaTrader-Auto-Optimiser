@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using Metatrader_Auto_Optimiser.Model.DirectoryManagers;
 using Metatrader_Auto_Optimiser.Model.FileReaders;
 using Metatrader_Auto_Optimiser.Model.Terminal;
 using ReportManager;
@@ -18,7 +20,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers
         /// <summary>
         /// Событие обновления Progress бара из оптимизатора
         /// </summary>
-        event Action<string, double> ProcessStatus; 
+        event Action<string, double> ProcessStatus;
 
         /// <summary>
         /// Менеджер терминалов
@@ -147,5 +149,25 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers
         /// Выбранный актив
         /// </summary>
         public string Symb;
+    }
+
+    class OptimiserFunctions
+    {
+        /// <summary>
+        /// Togle file name
+        /// </summary>
+        private static readonly TerminalDirectory terminalDirectory = new TerminalDirectory();
+        private static readonly string tougle_file_name = Path.Combine(terminalDirectory.Common.GetDirectory("Files", true).FullName, "AutoOptimiserTougle");
+
+        public static void AppendToTogleFile(TerminalManager terminal)
+        {
+            string id = File.Exists(tougle_file_name) ? $";{terminal.ProcessID}" : terminal.ProcessID.ToString();
+            File.AppendAllText(tougle_file_name, id, System.Text.Encoding.Unicode);
+        }
+
+        public static void RemoveTogleFile() 
+        { 
+            File.Delete(tougle_file_name); 
+        }
     }
 }

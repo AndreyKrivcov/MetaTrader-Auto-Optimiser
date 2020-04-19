@@ -127,6 +127,10 @@ namespace Metatrader_Auto_Optimiser.Model.Terminal
         /// Признат того запущен ли терминалл в данный момент или же нет
         /// </summary>
         public bool IsActive => Process.StartInfo.FileName != "" && !Process.HasExited;// (Process.StartInfo.FileName=="" ? false : !Process.HasExited);
+        /// <summary>
+        /// Process Id
+        /// </summary>
+        public int ProcessID => Process.Id;
 
         #region .ex5 files relative paths
         /// <summary>

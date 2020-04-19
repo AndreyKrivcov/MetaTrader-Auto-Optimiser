@@ -211,7 +211,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             {
                 OptimisationResult result = new OptimisationResult();
 
-                FillInDataForReportItem(result);
+                dispatcher.Invoke(() => FillInDataForReportItem(result));
             }
 
             // Изменился список пройденных оптимизационных проходов

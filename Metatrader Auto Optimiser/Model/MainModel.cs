@@ -50,6 +50,8 @@ namespace Metatrader_Auto_Optimiser.Model
 
             Optimiser.ProcessStatus -= Optimiser_ProcessStatus;
             Optimiser.OptimisationProcessFinished -= Optimiser_OptimisationProcessFinished;
+
+            OptimiserFunctions.RemoveTogleFile();
         }
 
         /// <summary>
@@ -57,7 +59,7 @@ namespace Metatrader_Auto_Optimiser.Model
         /// </summary>
         private readonly System.Windows.Threading.Dispatcher dispatcher =
             System.Windows.Application.Current.Dispatcher;
-
+        
         /// <summary>
         /// Коллбек события обновления прогресс бара
         /// </summary>
