@@ -175,7 +175,10 @@ namespace ReportManager
             if (ReportItem.BotParams == null)
                 ReportItem.BotParams = new Dictionary<string, string>();
 
-            ReportItem.BotParams.Add(name, value);
+            if (!ReportItem.BotParams.ContainsKey(name))
+                ReportItem.BotParams.Add(name, value);
+            else
+                ReportItem.BotParams[name] = value;
         }
         /// <summary>
         /// Добавление основного списка коэффициентов
@@ -347,7 +350,7 @@ namespace ReportManager
         {
             // Создаем файл если он не существует
             CreateFileIfNotExists(pathToBot, currency, balance, laverage, pathToFile);
-            
+
             ReportItem.Symbol = symbol;
             ReportItem.TF = tf;
 
@@ -402,7 +405,7 @@ namespace ReportManager
             xpath = "Optimisatin_Report/Optimisation_Results/Result[last()]/Coefficients";
 
             // Сохраняем коэфициенты
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.Custom.ToString(), new Dictionary<string, string> { { "Name", "Custom"} });
+            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.Custom.ToString(), new Dictionary<string, string> { { "Name", "Custom" } });
             WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.Payoff.ToString(), new Dictionary<string, string> { { "Name", "Payoff" } });
             WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.ProfitFactor.ToString(), new Dictionary<string, string> { { "Name", "Profit factor" } });
             WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.AverageProfitFactor.ToString(), new Dictionary<string, string> { { "Name", "Average Profit factor" } });
