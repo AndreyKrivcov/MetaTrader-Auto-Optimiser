@@ -390,13 +390,17 @@ namespace ReportManager
             AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients/Trading_Days", "Fr");
             #endregion
 
+
             #region Append Bot params
             // Пробегаемся по параметрам робота
-            foreach (var item in ReportItem.BotParams)
+            if (ReportItem.BotParams != null)
             {
-                // Пишем выбранный параметр робота
-                WriteItem(xmlDoc, "Optimisatin_Report/Optimisation_Results/Result[last()]",
-                          "Item", item.Value, new Dictionary<string, string> { { "Name", item.Key } });
+                foreach (var item in ReportItem.BotParams)
+                {
+                    // Пишем выбранный параметр робота
+                    WriteItem(xmlDoc, "Optimisatin_Report/Optimisation_Results/Result[last()]",
+                              "Item", item.Value, new Dictionary<string, string> { { "Name", item.Key } });
+                }
             }
             #endregion
 
