@@ -715,7 +715,7 @@ namespace Metatrader_Auto_Optimiser.Model
                     if (ind > -1)
                     {
                         var item = optimiserInputData.BotParams[ind];
-                        item.Variable = "true";
+                        item.Value = "true";
                         optimiserInputData.BotParams[ind] = item;
                     }
                     Optimiser.Start(optimiserInputData,

@@ -606,7 +606,6 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
                 int n = 1;
                 double step = 100.0 / HistoryToForward.Count;
 
-                bool isSaveData = false;
                 foreach (var item in HistoryToForward)
                 {
 
@@ -617,30 +616,23 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
 
                     List<OptimisationResult> optimisationResults = GetOptimisationResult(item.Key);
 
-                    bool success = Test((isForward ? item.Value : item.Key), optimisationResults, results, out Dictionary<string, string> botParams);
-                    if (success && !isSaveData)
-                        isSaveData = true;
-                    if (success && optimiserSettings.ReplaceDates)
-                    {
-                        List<OptimisationResult> _results = new List<OptimisationResult>();
-                        FillInData(_results, pathToFile);
-                        if (_results.Count > 0)
-                        {
-                            var data = _results[0];
-                            // В новом варианте выгрузке результатов оптимизации может не быть параметров робота, 
-                            // по этому они задаются здесь из тех что были отобраны 
-                            if (data.report.BotParams.Count == 0)
-                                data.report.BotParams = botParams;
+                    if (!Test((isForward ? item.Value : item.Key), optimisationResults, results, out Dictionary<string, string> botParams))
+                        continue;
 
-                            data.report.DateBorders = (isForward ? item.Value : item.Key);
-                            results.Add(data);
-                        }
-                    }
-                }
+                    List<OptimisationResult> _results = new List<OptimisationResult>();
+                    FillInData(_results, pathToFile);
 
-                if (isSaveData && !optimiserSettings.ReplaceDates)
-                {
-                    FillInData(results, pathToFile);
+                    if (_results.Count == 0)
+                        continue;
+                    var data = _results[0];
+                    // В новом варианте выгрузке результатов оптимизации может не быть параметров робота, 
+                    // по этому они задаются здесь из тех что были отобраны 
+                    if (data.report.BotParams.Count == 0)
+                        data.report.BotParams = botParams;
+
+                    if (optimiserSettings.ReplaceDates)
+                        data.report.DateBorders = (isForward ? item.Value : item.Key);
+                    results.Add(data);
                 }
             }
 
