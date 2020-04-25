@@ -344,136 +344,145 @@ namespace ReportManager
         /// <param name="tf">Таймфрейм</param>
         /// <param name="StartDT">Дата начала торгов</param>
         /// <param name="FinishDT">Дата завершения торгов</param>
-        public static void Write(string pathToBot, string currency, double balance,
+        public static string Write(string pathToBot, string currency, double balance,
                                  int laverage, string pathToFile, string symbol, int tf,
                                  ulong StartDT, ulong FinishDT)
         {
-            // Создаем файл если он не существует
-            CreateFileIfNotExists(pathToBot, currency, balance, laverage, pathToFile);
+            try
+            {
+                // Создаем файл если он не существует
+                CreateFileIfNotExists(pathToBot, currency, balance, laverage, pathToFile);
 
-            ReportItem.Symbol = symbol;
-            ReportItem.TF = tf;
+                ReportItem.Symbol = symbol;
+                ReportItem.TF = tf;
 
-            // Создаем дакумент и читем с его помощью файл
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.Load(pathToFile);
+                // Создаем дакумент и читем с его помощью файл
+                XmlDocument xmlDoc = new XmlDocument();
+                xmlDoc.Load(pathToFile);
 
-            #region Append result section
-            // Пишем запрос на переход в секцию с резкльтатами оптимизаций 
-            string xpath = "Optimisatin_Report/Optimisation_Results";
-            // Добавляем новую секцию с резкльтатами оптимизации
-            AppendSection(xmlDoc, xpath, "Result",
-                          new Dictionary<string, string>
-                          {
+                #region Append result section
+                // Пишем запрос на переход в секцию с резкльтатами оптимизаций 
+                string xpath = "Optimisatin_Report/Optimisation_Results";
+                // Добавляем новую секцию с резкльтатами оптимизации
+                AppendSection(xmlDoc, xpath, "Result",
+                              new Dictionary<string, string>
+                              {
                               { "Symbol", symbol },
                               { "TF", tf.ToString() },
                               { "Start_DT", StartDT.ToString() },
                               { "Finish_DT", FinishDT.ToString() }
-                          });
-            // Добавляем секцию с коэффициентами оптимизаций
-            AppendSection(xmlDoc, $"{xpath}/Result[last()]", "Coefficients");
-            // Добавляем секцию с  VaR
-            AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients", "VaR");
-            // Добавляем секцию с суммарными PL / DD
-            AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients", "Max_PL_DD");
-            // Добавляем секцию с результатами торгов по дням
-            AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients", "Trading_Days");
-            // Добавляем секцию с результатами торгов в Пн
-            AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients/Trading_Days", "Mn");
-            // Добавляем секцию с результатами торгов во Вт
-            AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients/Trading_Days", "Tu");
-            // Добавляем секцию с результатами торгов в Ср
-            AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients/Trading_Days", "We");
-            // Добавляем секцию с результатами торгов в Чт
-            AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients/Trading_Days", "Th");
-            // Добавляем секцию с результатами торгов в Пт
-            AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients/Trading_Days", "Fr");
-            #endregion
+                              });
+                // Добавляем секцию с коэффициентами оптимизаций
+                AppendSection(xmlDoc, $"{xpath}/Result[last()]", "Coefficients");
+                // Добавляем секцию с  VaR
+                AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients", "VaR");
+                // Добавляем секцию с суммарными PL / DD
+                AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients", "Max_PL_DD");
+                // Добавляем секцию с результатами торгов по дням
+                AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients", "Trading_Days");
+                // Добавляем секцию с результатами торгов в Пн
+                AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients/Trading_Days", "Mn");
+                // Добавляем секцию с результатами торгов во Вт
+                AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients/Trading_Days", "Tu");
+                // Добавляем секцию с результатами торгов в Ср
+                AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients/Trading_Days", "We");
+                // Добавляем секцию с результатами торгов в Чт
+                AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients/Trading_Days", "Th");
+                // Добавляем секцию с результатами торгов в Пт
+                AppendSection(xmlDoc, $"{xpath}/Result[last()]/Coefficients/Trading_Days", "Fr");
+                #endregion
 
 
-            #region Append Bot params
-            // Пробегаемся по параметрам робота
-            if (ReportItem.BotParams != null)
-            {
-                foreach (var item in ReportItem.BotParams)
+                #region Append Bot params
+                // Пробегаемся по параметрам робота
+                if (ReportItem.BotParams != null)
                 {
-                    // Пишем выбранный параметр робота
-                    WriteItem(xmlDoc, "Optimisatin_Report/Optimisation_Results/Result[last()]",
-                              "Item", item.Value, new Dictionary<string, string> { { "Name", item.Key } });
+                    foreach (var item in ReportItem.BotParams)
+                    {
+                        // Пишем выбранный параметр робота
+                        WriteItem(xmlDoc, "Optimisatin_Report/Optimisation_Results/Result[last()]",
+                                  "Item", item.Value, new Dictionary<string, string> { { "Name", item.Key } });
+                    }
                 }
-            }
-            #endregion
+                #endregion
 
-            #region Append main coef
-            // Задаем путь к ноде с коэффициентами
-            xpath = "Optimisatin_Report/Optimisation_Results/Result[last()]/Coefficients";
+                #region Append main coef
+                // Задаем путь к ноде с коэффициентами
+                xpath = "Optimisatin_Report/Optimisation_Results/Result[last()]/Coefficients";
 
-            // Сохраняем коэфициенты
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.Custom.ToString(), new Dictionary<string, string> { { "Name", "Custom" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.Payoff.ToString(), new Dictionary<string, string> { { "Name", "Payoff" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.ProfitFactor.ToString(), new Dictionary<string, string> { { "Name", "Profit factor" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.AverageProfitFactor.ToString(), new Dictionary<string, string> { { "Name", "Average Profit factor" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.RecoveryFactor.ToString(), new Dictionary<string, string> { { "Name", "Recovery factor" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.AverageRecoveryFactor.ToString(), new Dictionary<string, string> { { "Name", "Average Recovery factor" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.TotalTrades.ToString(), new Dictionary<string, string> { { "Name", "Total trades" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.PL.ToString(), new Dictionary<string, string> { { "Name", "PL" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.DD.ToString(), new Dictionary<string, string> { { "Name", "DD" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.AltmanZScore.ToString(), new Dictionary<string, string> { { "Name", "Altman Z Score" } });
-            #endregion
+                // Сохраняем коэфициенты
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.Custom.ToString(), new Dictionary<string, string> { { "Name", "Custom" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.Payoff.ToString(), new Dictionary<string, string> { { "Name", "Payoff" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.ProfitFactor.ToString(), new Dictionary<string, string> { { "Name", "Profit factor" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.AverageProfitFactor.ToString(), new Dictionary<string, string> { { "Name", "Average Profit factor" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.RecoveryFactor.ToString(), new Dictionary<string, string> { { "Name", "Recovery factor" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.AverageRecoveryFactor.ToString(), new Dictionary<string, string> { { "Name", "Average Recovery factor" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.TotalTrades.ToString(), new Dictionary<string, string> { { "Name", "Total trades" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.PL.ToString(), new Dictionary<string, string> { { "Name", "PL" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.DD.ToString(), new Dictionary<string, string> { { "Name", "DD" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.AltmanZScore.ToString(), new Dictionary<string, string> { { "Name", "Altman Z Score" } });
+                #endregion
 
-            #region Append VaR
-            // Задаем путь к ноде с VaR
-            xpath = "Optimisatin_Report/Optimisation_Results/Result[last()]/Coefficients/VaR";
+                #region Append VaR
+                // Задаем путь к ноде с VaR
+                xpath = "Optimisatin_Report/Optimisation_Results/Result[last()]/Coefficients/VaR";
 
-            // Созраняем результаты VaR
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.VaR.Q_90.ToString(), new Dictionary<string, string> { { "Name", "90" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.VaR.Q_95.ToString(), new Dictionary<string, string> { { "Name", "95" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.VaR.Q_99.ToString(), new Dictionary<string, string> { { "Name", "99" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.VaR.Mx.ToString(), new Dictionary<string, string> { { "Name", "Mx" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.VaR.Std.ToString(), new Dictionary<string, string> { { "Name", "Std" } });
-            #endregion
+                // Созраняем результаты VaR
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.VaR.Q_90.ToString(), new Dictionary<string, string> { { "Name", "90" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.VaR.Q_95.ToString(), new Dictionary<string, string> { { "Name", "95" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.VaR.Q_99.ToString(), new Dictionary<string, string> { { "Name", "99" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.VaR.Mx.ToString(), new Dictionary<string, string> { { "Name", "Mx" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.VaR.Std.ToString(), new Dictionary<string, string> { { "Name", "Std" } });
+                #endregion
 
-            #region Append max PL and DD
-            // Задаем путь к ноде с суммарной PL / DD
-            xpath = "Optimisatin_Report/Optimisation_Results/Result[last()]/Coefficients/Max_PL_DD";
+                #region Append max PL and DD
+                // Задаем путь к ноде с суммарной PL / DD
+                xpath = "Optimisatin_Report/Optimisation_Results/Result[last()]/Coefficients/Max_PL_DD";
 
-            // Сохраняем коэффициенты
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.MaxPLDD.Profit.Value.ToString(), new Dictionary<string, string> { { "Name", "Profit" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.MaxPLDD.DD.Value.ToString(), new Dictionary<string, string> { { "Name", "DD" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.MaxPLDD.Profit.TotalTrades.ToString(), new Dictionary<string, string> { { "Name", "Total Profit Trades" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.MaxPLDD.DD.TotalTrades.ToString(), new Dictionary<string, string> { { "Name", "Total Loose Trades" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.MaxPLDD.Profit.ConsecutivesTrades.ToString(), new Dictionary<string, string> { { "Name", "Consecutive Wins" } });
-            WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.MaxPLDD.DD.ConsecutivesTrades.ToString(), new Dictionary<string, string> { { "Name", "Consecutive Loose" } });
-            #endregion
+                // Сохраняем коэффициенты
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.MaxPLDD.Profit.Value.ToString(), new Dictionary<string, string> { { "Name", "Profit" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.MaxPLDD.DD.Value.ToString(), new Dictionary<string, string> { { "Name", "DD" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.MaxPLDD.Profit.TotalTrades.ToString(), new Dictionary<string, string> { { "Name", "Total Profit Trades" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.MaxPLDD.DD.TotalTrades.ToString(), new Dictionary<string, string> { { "Name", "Total Loose Trades" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.MaxPLDD.Profit.ConsecutivesTrades.ToString(), new Dictionary<string, string> { { "Name", "Consecutive Wins" } });
+                WriteItem(xmlDoc, xpath, "Item", ReportItem.OptimisationCoefficients.MaxPLDD.DD.ConsecutivesTrades.ToString(), new Dictionary<string, string> { { "Name", "Consecutive Loose" } });
+                #endregion
 
-            #region Append Days
-            foreach (var item in ReportItem.OptimisationCoefficients.TradingDays)
-            {
-                // Задаем путь к ноде конкретного дня
-                xpath = "Optimisatin_Report/Optimisation_Results/Result[last()]/Coefficients/Trading_Days";
-                // Выбираем день
-                switch (item.Key)
+                #region Append Days
+                foreach (var item in ReportItem.OptimisationCoefficients.TradingDays)
                 {
-                    case DayOfWeek.Monday: xpath += "/Mn"; break;
-                    case DayOfWeek.Tuesday: xpath += "/Tu"; break;
-                    case DayOfWeek.Wednesday: xpath += "/We"; break;
-                    case DayOfWeek.Thursday: xpath += "/Th"; break;
-                    case DayOfWeek.Friday: xpath += "/Fr"; break;
+                    // Задаем путь к ноде конкретного дня
+                    xpath = "Optimisatin_Report/Optimisation_Results/Result[last()]/Coefficients/Trading_Days";
+                    // Выбираем день
+                    switch (item.Key)
+                    {
+                        case DayOfWeek.Monday: xpath += "/Mn"; break;
+                        case DayOfWeek.Tuesday: xpath += "/Tu"; break;
+                        case DayOfWeek.Wednesday: xpath += "/We"; break;
+                        case DayOfWeek.Thursday: xpath += "/Th"; break;
+                        case DayOfWeek.Friday: xpath += "/Fr"; break;
+                    }
+
+                    // Созраняем результаты
+                    WriteItem(xmlDoc, xpath, "Item", item.Value.Profit.Value.ToString(), new Dictionary<string, string> { { "Name", "Profit" } });
+                    WriteItem(xmlDoc, xpath, "Item", item.Value.DD.Value.ToString(), new Dictionary<string, string> { { "Name", "DD" } });
+                    WriteItem(xmlDoc, xpath, "Item", item.Value.Profit.Trades.ToString(), new Dictionary<string, string> { { "Name", "Number Of Profit Trades" } });
+                    WriteItem(xmlDoc, xpath, "Item", item.Value.DD.Trades.ToString(), new Dictionary<string, string> { { "Name", "Number Of Loose Trades" } });
                 }
+                #endregion
 
-                // Созраняем результаты
-                WriteItem(xmlDoc, xpath, "Item", item.Value.Profit.Value.ToString(), new Dictionary<string, string> { { "Name", "Profit" } });
-                WriteItem(xmlDoc, xpath, "Item", item.Value.DD.Value.ToString(), new Dictionary<string, string> { { "Name", "DD" } });
-                WriteItem(xmlDoc, xpath, "Item", item.Value.Profit.Trades.ToString(), new Dictionary<string, string> { { "Name", "Number Of Profit Trades" } });
-                WriteItem(xmlDoc, xpath, "Item", item.Value.DD.Trades.ToString(), new Dictionary<string, string> { { "Name", "Number Of Loose Trades" } });
+                // Перезаписываем файл с внесенными изменениями
+                xmlDoc.Save(pathToFile);
+
+                // Отчищаем переменную где зранились записанные в файл результаты
+                ClearReportItem();
             }
-            #endregion
+            catch (Exception e)
+            {
+                return e.Message;
+            }
 
-            // Перезаписываем файл с внесенными изменениями
-            xmlDoc.Save(pathToFile);
-
-            // Отчищаем переменную где зранились записанные в файл результаты
-            ClearReportItem();
+            return "";
         }
         /// <summary>
         /// Запись в файл с блокировкой через именованный мьютекс
@@ -493,25 +502,17 @@ namespace ReportManager
                                        int laverage, string pathToFile, string symbol, int tf,
                                        ulong StartDT, ulong FinishDT)
         {
-            string ans = "";
             // Блокировка мьютекса
             Mutex m = new Mutex(false, mutexName);
             m.WaitOne();
-            try
-            {
-                // запись в файл
-                Write(pathToBot, currency, balance, laverage, pathToFile, symbol, tf, StartDT, FinishDT);
-            }
-            catch (Exception e)
-            {
-                // Ловим ошибку если она была
-                ans = e.Message;
-            }
+
+            // запись в файл
+            string s = Write(pathToBot, currency, balance, laverage, pathToFile, symbol, tf, StartDT, FinishDT);
 
             // Освобождаем мьютекс
             m.ReleaseMutex();
             // Возвращаем тикст ошибки
-            return ans;
+            return s;
         }
     }
 

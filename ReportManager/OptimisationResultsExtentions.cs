@@ -632,8 +632,10 @@ namespace ReportManager
             {
                 ReportWriter.SetReportItem(report);
 
-                ReportWriter.Write(pathToBot, currency, balance, laverage, pathToFile, report.Symbol, report.TF,
+                string error = ReportWriter.Write(pathToBot, currency, balance, laverage, pathToFile, report.Symbol, report.TF,
                                    report.DateBorders.From.DTToUnixDT(), report.DateBorders.Till.DTToUnixDT());
+                if (error != "")
+                    throw new Exception(error);
             }
             catch (Exception e)
             {
