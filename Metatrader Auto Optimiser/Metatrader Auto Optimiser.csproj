@@ -65,6 +65,11 @@
     <Compile Include="Model\AutoFillInDateBordersM.cs" />
     <Compile Include="Model\IMainModel.cs" />
     <Compile Include="Model\MainModel.cs" />
+    <Compile Include="Model\OptimisationManagers\CommonMethods.cs" />
+    <Compile Include="Model\OptimisationManagers\DoubleFiltered\Manager.cs" />
+    <Compile Include="Model\OptimisationManagers\DoubleFiltered\Settings.xaml.cs">
+      <DependentUpon>Settings.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Model\OptimisationManagers\IOptimiser.cs" />
     <Compile Include="Model\OptimisationManagers\OptimiserCreator.cs" />
     <Compile Include="Model\OptimisationManagers\SimpleForvard\Manager.cs" />
@@ -116,6 +121,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="AutoOptimiser.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Model\OptimisationManagers\DoubleFiltered\Settings.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

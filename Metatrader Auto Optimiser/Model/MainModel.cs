@@ -35,9 +35,10 @@ namespace Metatrader_Auto_Optimiser.Model
         public MainModel()
         {
             optimiserCreators = new List<OptimiserCreator>
-                                {
-                                    new OptimisationManagers.SimpleForvard.SimpleOptimiserManagerCreator(workingDirectory)
-                                };
+            {
+                new OptimisationManagers.SimpleForvard.SimpleOptimiserManagerCreator(workingDirectory),
+                new OptimisationManagers.DoubleFiltered.DoubleFilterOptimiserCreator()
+            };
         }
 
         /// <summary>

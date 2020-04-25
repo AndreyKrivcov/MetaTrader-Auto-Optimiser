@@ -8,17 +8,7 @@ namespace Metatrader_Auto_Optimiser.Model
 {
     class AutoFillInDateBordersCreator
     {
-        private static IAutoFillInDateBordersM instance;
-        public static IAutoFillInDateBordersM Model
-        {
-            get
-            {
-                if (instance == null)
-                    instance = new AutoFillInDateBordersM();
-
-                return instance;
-            }
-        }
+        public static IAutoFillInDateBordersM Model => AutoFillInDateBordersM.Instance();
     }
     interface IAutoFillInDateBordersM
     {
@@ -27,6 +17,18 @@ namespace Metatrader_Auto_Optimiser.Model
     }
     class AutoFillInDateBordersM : IAutoFillInDateBordersM
     {
+        private AutoFillInDateBordersM() { }
+
+        private static AutoFillInDateBordersM instance;
+
+        public static AutoFillInDateBordersM Instance()
+        {
+            if (instance == null)
+                instance = new AutoFillInDateBordersM();
+
+            return instance;
+        }
+
         public event Action<List<KeyValuePair<OptimisationType, DateTime[]>>> DateBorders;
 
         public void Calculate(DateTime From, DateTime Till, uint history, uint forward)
@@ -41,18 +43,18 @@ namespace Metatrader_Auto_Optimiser.Model
             DateTime _history = From;
             DateTime _forward = From.AddDays(history + 1);
 
-            DateTime CalcEndDate() 
+            DateTime CalcEndDate()
             {
                 return type == OptimisationType.History ? _history.AddDays(history) : _forward.AddDays(forward);
             }
 
             while (CalcEndDate() <= Till)
             {
-                DateTime from = type == OptimisationType.History ? _history : _forward;             
+                DateTime from = type == OptimisationType.History ? _history : _forward;
                 data.Add(new KeyValuePair<OptimisationType, DateTime[]>(type, new DateTime[2] { from, CalcEndDate() }));
 
-                if(type == OptimisationType.History) 
-                    _history = _history.AddDays(forward + 1); 
+                if (type == OptimisationType.History)
+                    _history = _history.AddDays(forward + 1);
                 else
                     _forward = _forward.AddDays(forward + 1);
 

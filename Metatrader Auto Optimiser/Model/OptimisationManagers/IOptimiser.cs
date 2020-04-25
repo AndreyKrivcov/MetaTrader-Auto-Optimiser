@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using Metatrader_Auto_Optimiser.Model.DirectoryManagers;
 using Metatrader_Auto_Optimiser.Model.FileReaders;
 using Metatrader_Auto_Optimiser.Model.Terminal;
 using ReportManager;
@@ -150,10 +148,4 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers
         /// </summary>
         public string Symb;
     }
-
-    class Fixed_Input_Settings
-    {
-        public static string CloseTerminalFromBot { get; } = "close_terminal_after_finishing_optimisation";
-    }
-
 }

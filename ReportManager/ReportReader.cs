@@ -177,6 +177,8 @@ namespace ReportManager
                 }
                 ReportItem = Item;
             }
+            else
+                ReportItem = null;
 
             return ans;
         }
