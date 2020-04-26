@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 
 using ICommand = System.Windows.Input.ICommand;
 using ListView = System.Windows.Controls.ListView;

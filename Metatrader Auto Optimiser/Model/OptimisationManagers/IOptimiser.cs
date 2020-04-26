@@ -84,6 +84,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers
         /// Загрузка окна с настройками процесса оптимизации
         /// </summary>
         void LoadSettingsWindow();
+        void CloseSettingsWindow();
         /// <summary>
         /// Отчистка оптимизатора
         /// </summary>

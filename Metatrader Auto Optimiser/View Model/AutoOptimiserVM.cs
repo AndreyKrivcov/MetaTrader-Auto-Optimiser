@@ -73,6 +73,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
             #region Subwindows
             autoFillInDateBorders = new SubFormKeeper(() => { return new AutoFillInDateBorders(); });
             AutoFillInDateBordersCreator.Model.DateBorders += Model_DateBorders;
+            CloseSubwindows = new RelayCommand(_CloseSubwindows);
             #endregion
 
             // Заполняем коллбеки графического интерфейса
@@ -182,6 +183,13 @@ namespace Metatrader_Auto_Optimiser.View_Model
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public ICommand CloseSubwindows { get; }
+        private void _CloseSubwindows(object o)
+        {
+            autoFillInDateBorders.Close();
+            model.Optimiser.CloseSettingsWindow();
         }
         #endregion
 
@@ -320,10 +328,22 @@ namespace Metatrader_Auto_Optimiser.View_Model
         public double Progress { get; set; } = 0;
         #endregion
 
+        #region Enable main tougles
+        private bool enableMainTougles = true;
         /// <summary>
         /// Если этот переключатель = false, то наиболее важные поля - недоступны
         /// </summary>
-        public bool EnableMainTogles { get; private set; } = true;
+        public bool EnableMainTogles
+        {
+            get => enableMainTougles;
+            private set
+            {
+                enableMainTougles = value;
+                if (!value)
+                    model.Optimiser.CloseSettingsWindow();
+            }
+        }
+        #endregion
 
         #region Bot params
         /// <summary>

@@ -70,6 +70,7 @@
     <Compile Include="Model\OptimisationManagers\DoubleFiltered\Settings.xaml.cs">
       <DependentUpon>Settings.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Model\OptimisationManagers\DoubleFiltered\Settings_VM_M.cs" />
     <Compile Include="Model\OptimisationManagers\IOptimiser.cs" />
     <Compile Include="Model\OptimisationManagers\OptimiserCreator.cs" />
     <Compile Include="Model\OptimisationManagers\SimpleForvard\Manager.cs" />
@@ -83,6 +84,7 @@
       <DependentUpon>AutoFillInDateBorders.xaml</DependentUpon>
     </Compile>
     <Compile Include="View\ListViewExtention.cs" />
+    <Compile Include="View\WindowExtention.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutoOptimiser.xaml.cs">

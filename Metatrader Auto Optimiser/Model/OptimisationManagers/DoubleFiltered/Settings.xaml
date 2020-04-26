@@ -5,8 +5,18 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered"
         mc:Ignorable="d"
-        Title="Settings" Height="450" Width="800">
-    <Grid>
-        
-    </Grid>
+        Height="180" Width="200">
+
+    <Window.DataContext>
+        <local:Settings_VM/>
+    </Window.DataContext>
+
+    <StackPanel Margin="5" Height="100">
+        <Label Content="Double filtered optimiser" FontStyle="Italic"/>
+        <CheckBox Content="Is tick test" IsChecked="{Binding IsTickTest}"/>
+        <Label Content="Second filter:"/>
+        <ComboBox Margin="0,2,0,0" 
+                  ItemsSource="{Binding SourtingFlags}"
+                  SelectedItem="{Binding SelectedFlag}"/>
+    </StackPanel>
 </Window>

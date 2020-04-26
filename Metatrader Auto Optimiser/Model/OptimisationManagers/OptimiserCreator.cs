@@ -27,4 +27,13 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers
         /// </summary>
         public string Name { get; }
     }
+
+    class Optimisers
+    {
+        public static new List<OptimiserCreator> Creators => new List<OptimiserCreator>
+        {
+            new SimpleForvard.SimpleOptimiserManagerCreator(),
+            new DoubleFiltered.DoubleFilterOptimiserCreator()
+        };
+    }
 }

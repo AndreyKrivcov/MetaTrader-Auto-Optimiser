@@ -22,14 +22,8 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
         /// Конструктор
         /// </summary>
         /// <param name="workingDirectory">Класс описывающий структуру рабочей директории</param>
-        public SimpleOptimiserManagerCreator(WorkingDirectory workingDirectory) : base(Name)
-        {
-            this.workingDirectory = workingDirectory;
-        }
-        /// <summary>
-        /// Менеджер рабочей директории
-        /// </summary>
-        private readonly WorkingDirectory workingDirectory;
+        public SimpleOptimiserManagerCreator() : base(Name)
+        { }
         /// <summary>
         /// Метод порождающий оптимизатор
         /// </summary>
@@ -37,7 +31,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
         /// <returns>Оптимизатор</returns>
         public override IOptimiser Create(TerminalManager terminalManager)
         {
-            return new Manager(workingDirectory)
+            return new Manager(new DirectoryManagers.WorkingDirectory())
             {
                 TerminalManager = terminalManager
             };
@@ -221,6 +215,10 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
         {
             this.workingDirectory = workingDirectory;
         }
+        ~Manager()
+        {
+            CloseSettingsWindow();
+        }
         /// <summary>
         /// Менеджер рабочих директорий
         /// </summary>
@@ -354,6 +352,12 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
             settingsGUI.Show();
         }
 
+        public void CloseSettingsWindow()
+        {
+            if (settingsGUI != null)
+                settingsGUI.Close();
+        }
+
         /// <summary>
         /// Запуск процесса оптимизации
         /// </summary>
@@ -372,7 +376,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
             ProcessStatus("Start optimisation", 0);
             IsOptimisationInProcess = true;
 
-            // Проверить доступность пуки к результатом оптимизации
+            // Проверить доступность папки к результатом оптимизации
             if (string.IsNullOrEmpty(PathToResultsFile) ||
                string.IsNullOrWhiteSpace(PathToResultsFile))
             {

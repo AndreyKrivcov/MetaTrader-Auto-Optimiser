@@ -30,18 +30,6 @@ namespace Metatrader_Auto_Optimiser.Model
     class MainModel : IMainModel
     {
         /// <summary>
-        /// Конструктор по умолчанию
-        /// </summary>
-        public MainModel()
-        {
-            optimiserCreators = new List<OptimiserCreator>
-            {
-                new OptimisationManagers.SimpleForvard.SimpleOptimiserManagerCreator(workingDirectory),
-                new OptimisationManagers.DoubleFiltered.DoubleFilterOptimiserCreator()
-            };
-        }
-
-        /// <summary>
         /// Деструктор
         /// </summary>
         ~MainModel()
@@ -234,7 +222,7 @@ namespace Metatrader_Auto_Optimiser.Model
         /// <summary>
         /// Список фабрик оптимизаторов
         /// </summary>
-        private readonly List<OptimiserCreator> optimiserCreators;
+        private readonly List<OptimiserCreator> optimiserCreators = Optimisers.Creators;
 
         #region Getters
         /// <summary>
@@ -324,6 +312,7 @@ namespace Metatrader_Auto_Optimiser.Model
                 Optimiser.ProcessStatus -= Optimiser_ProcessStatus;
                 Optimiser.OptimisationProcessFinished -= Optimiser_OptimisationProcessFinished;
                 Optimiser.ClearOptimiser();
+                Optimiser.CloseSettingsWindow();
 
                 // Создаем новый оптимизатор и копируем старый менеджер терминалла
                 Optimiser = optimiserCreators.First(x => x.Name == optimiserName).Create(Optimiser.TerminalManager);
@@ -695,6 +684,8 @@ namespace Metatrader_Auto_Optimiser.Model
                 List<DirectoryInfo> dirData = dir.GetDirectories().ToList();
                 dirData.ForEach(x => x.Delete());
             }
+
+            Optimiser.CloseSettingsWindow();
 
             await Task.Run(() =>
             {

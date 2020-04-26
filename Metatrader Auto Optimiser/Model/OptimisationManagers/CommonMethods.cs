@@ -61,11 +61,11 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers
 
         public static bool ReadFile(List<OptimisationResult> data,
                                     string pathToReportFile,
-                                    bool deleteAfterReading,
                                     string expectedCurecncy = null,
                                     double? expectedBalance = null,
                                     int? expectedLaverage = null,
-                                    string expectedPathToBot = null)
+                                    string expectedPathToBot = null,
+                                    bool deleteAfterReading = true)
         {
             if (!File.Exists(pathToReportFile))
                 return false;

@@ -12,7 +12,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered
         { }
         public override IOptimiser Create(TerminalManager terminalManager)
         {
-            return new Manager(Name);
+            return new Manager(Name) { TerminalManager = terminalManager };
         }
     }
 
@@ -21,7 +21,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered
         public Manager(string name)
         {
             Name = name;
-            SubFormKeeper = new View_Model.SubFormKeeper(_Window_creator);
+            SubFormKeeper = new View_Model.SubFormKeeper(() => { return new Settings(); });
         }
         ~Manager() { SubFormKeeper.Close(); }
 
@@ -123,10 +123,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered
         #region Subwindow
 
         private readonly View_Model.SubFormKeeper SubFormKeeper;
-        private System.Windows.Window _Window_creator()
-        {
-            throw new NotImplementedException();
-        }
+        private readonly Settings_M Settings = Settings_M.Instance();
 
         public void LoadSettingsWindow()
         {
@@ -160,6 +157,11 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered
             IsOptimisationInProcess = false;
             ClearOptimiser();
             OptimisationProcessFinished(this);
+        }
+
+        public void CloseSettingsWindow()
+        {
+            SubFormKeeper.Close();
         }
     }
 }

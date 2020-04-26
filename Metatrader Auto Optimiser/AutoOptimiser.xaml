@@ -7,7 +7,9 @@
         xmlns:v="clr-namespace:Metatrader_Auto_Optimiser.View"
         mc:Ignorable="d"
         Title="Auto Optimiser" Height="500" Width="1200"
-        MinHeight="500" MinWidth="1200">
+        MinHeight="500" MinWidth="1200"
+        v:WindowExtention.ClosedCommand="{Binding CloseSubwindows}"
+        >
 
     <Window.DataContext>
         <vm:AutoOptimiserVM/>
