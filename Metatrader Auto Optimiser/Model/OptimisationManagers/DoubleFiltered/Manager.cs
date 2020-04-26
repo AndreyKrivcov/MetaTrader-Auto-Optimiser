@@ -111,7 +111,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered
         {
             if (TerminalManager.IsActive || IsOptimisationInProcess)
             {
-                throw new Exception("Can`t cleat optimiserbecouse of terminal is active or optimisation is in process");
+                throw new Exception("Can`t clear optimiser becouse of terminal is active or optimisation is in process");
             }
 
             AllOptimisationResults.Clear();
@@ -308,6 +308,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered
                     var item = data.First();
                     if (item.report.BotParams.Count == 0)
                         item.report.BotParams = botParams.ToDictionary(x => x.Variable, x => x.Value);
+                    item.report.DateBorders = borders;
                     collection.Add(item);
                 }
 
