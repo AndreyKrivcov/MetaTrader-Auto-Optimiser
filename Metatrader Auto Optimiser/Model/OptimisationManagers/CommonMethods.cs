@@ -1,4 +1,5 @@
 ﻿using Metatrader_Auto_Optimiser.Model.DirectoryManagers;
+using Metatrader_Auto_Optimiser.Model.FileReaders;
 using Metatrader_Auto_Optimiser.Model.Terminal;
 using ReportManager;
 using System;
@@ -107,6 +108,26 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers
                 File.Delete(pathToReportFile);
 
             return ans;
+        }
+
+        public static string SaveExpertSettings(string expertName,
+                                              List<ParamsItem> settings,
+                                              DirectoryInfo terminalChangeableDirectory)
+        {
+            string setFile = new FileInfo(Path.Combine(terminalChangeableDirectory
+                             .GetDirectory("MQL5")
+                             .GetDirectory("Profiles")
+                             .GetDirectory("Tester")
+                             .FullName,
+                             $"{expertName}.set"))
+                             .FullName;
+            SetFileManager setFileManager = new SetFileManager(setFile, true)
+            {
+                Params = settings
+            };
+            setFileManager.SaveParams();
+
+            return setFile;
         }
     }
 
