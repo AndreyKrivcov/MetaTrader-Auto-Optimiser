@@ -241,6 +241,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered
             ProcessStatus("Tests", 0);
 
             configFile.Tester.Optimization = ENUM_OptimisationMode.Disabled;
+            configFile.Tester.ShutdownTerminal = true;
             configFile.Tester.Model =
                 (Settings.IsTickTest ? ENUM_Model.Every_tick_based_on_real_ticks : ENUM_Model.OHLC_1_minute);
             foreach (var item in TestInputData)
