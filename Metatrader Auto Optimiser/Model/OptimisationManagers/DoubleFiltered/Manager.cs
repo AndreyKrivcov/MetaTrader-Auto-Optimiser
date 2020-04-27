@@ -256,6 +256,9 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered
                 Test(item.Key, item.Value.Key, item.Value.Value, configFile, PathToResultsFile);
             }
 
+            CommonMethods.SaveExpertSettings(Path.GetFileNameWithoutExtension(optimiserInputData.RelativePathToBot),
+                                             optimiserInputData.BotParams, TerminalManager.TerminalChangeableDirectory);
+
             // Переключение статуса оптимизаций на завершенный и вызов соответствующего события
             IsOptimisationInProcess = false;
             OptimisationProcessFinished(this);
@@ -276,7 +279,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered
 
             // Выбор 100 лучших результатов и повторная сортировка
             results = results.GetRange(0, Math.Min(100, results.Count));
-            results.SortOptimisations(OrderBy.Descending, new[] { Settings.SecondSorter });
+            results = results.SortOptimisations(OrderBy.Descending, new[] { Settings.SecondSorter }).ToList();
 
             // Подготовка параметров и возвращение результатов
             return new KeyValuePair<DateBorders, IEnumerable<ParamsItem>>(borders,
@@ -300,6 +303,9 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered
 
             void tester(List<OptimisationResult> collection, DateBorders borders)
             {
+                if (borders == null)
+                    return;
+
                 config.Tester.FromDate = borders.From;
                 config.Tester.ToDate = borders.Till;
 

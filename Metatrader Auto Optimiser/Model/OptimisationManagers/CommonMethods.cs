@@ -127,7 +127,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers
             };
             setFileManager.SaveParams();
 
-            return setFile;
+            return Path.GetFileName(setFile);
         }
     }
 
