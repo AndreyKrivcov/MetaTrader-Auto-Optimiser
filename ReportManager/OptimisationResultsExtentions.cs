@@ -70,7 +70,7 @@ namespace ReportManager
         /// <returns></returns>
         public static IEnumerable<OptimisationResult> SortOptimisations(this IEnumerable<OptimisationResult> results,
                                                                         OrderBy order, IEnumerable<SortBy> sortingFlags,
-                                                                        Func<SortBy, OrderBy> sortMethod = null)
+                                                                        Func<SortBy, bool> isIncreasing = null)
         {
             // Получаем уникальный список флагов для сортировки
             sortingFlags = sortingFlags.Distinct();
@@ -138,7 +138,7 @@ namespace ReportManager
                     if (mm.Max > 0)
                     {
                         // В зависимости от метода сортировки - высчитываем коэффициент
-                        if ((sortMethod == null ? GetSortMethod(item.Key) : sortMethod(item.Key)) == OrderBy.Descending)
+                        if (!(isIncreasing == null ? IsSorterIncreasing(item.Key) : isIncreasing(item.Key)))
                         {
                             // высчитываем коэффициент для сортировки по убыванию
                             data.SortBy += (1 - value / mm.Max) * coef;
@@ -166,51 +166,51 @@ namespace ReportManager
         /// </summary>
         /// <param name="sortBy">Коэффициент по которому осртируем данные</param>
         /// <returns>Метод сортировки</returns>
-        private static OrderBy GetSortMethod(SortBy sortBy)
+        private static bool IsSorterIncreasing(SortBy sortBy)
         {
             switch (sortBy)
             {
-                case SortBy.Custom: return OrderBy.Ascending;
-                case SortBy.Payoff: return OrderBy.Ascending;
-                case SortBy.ProfitFactor: return OrderBy.Ascending;
-                case SortBy.AverageProfitFactor: return OrderBy.Ascending;
-                case SortBy.RecoveryFactor: return OrderBy.Ascending;
-                case SortBy.AverageRecoveryFactor: return OrderBy.Ascending;
-                case SortBy.PL: return OrderBy.Ascending;
-                case SortBy.DD: return OrderBy.Descending;
-                case SortBy.AltmanZScore: return OrderBy.Descending;
-                case SortBy.TotalTrades: return OrderBy.Ascending;
-                case SortBy.Q_90: return OrderBy.Descending;
-                case SortBy.Q_95: return OrderBy.Descending;
-                case SortBy.Q_99: return OrderBy.Descending;
-                case SortBy.Mx: return OrderBy.Ascending;
-                case SortBy.Std: return OrderBy.Descending;
-                case SortBy.MaxProfit: return OrderBy.Ascending;
-                case SortBy.MaxDD: return OrderBy.Descending;
-                case SortBy.MaxProfitTotalTrades: return OrderBy.Ascending;
-                case SortBy.MaxDDTotalTrades: return OrderBy.Descending;
-                case SortBy.MaxProfitConsecutivesTrades: return OrderBy.Ascending;
-                case SortBy.MaxDDConsecutivesTrades: return OrderBy.Descending;
-                case SortBy.AverageDailyProfit_Mn: return OrderBy.Ascending;
-                case SortBy.AverageDailyDD_Mn: return OrderBy.Descending;
-                case SortBy.AverageDailyProfitTrades_Mn: return OrderBy.Ascending;
-                case SortBy.AverageDailyDDTrades_Mn: return OrderBy.Descending;
-                case SortBy.AverageDailyProfit_Tu: return OrderBy.Ascending;
-                case SortBy.AverageDailyDD_Tu: return OrderBy.Descending;
-                case SortBy.AverageDailyProfitTrades_Tu: return OrderBy.Ascending;
-                case SortBy.AverageDailyDDTrades_Tu: return OrderBy.Descending;
-                case SortBy.AverageDailyProfit_We: return OrderBy.Ascending;
-                case SortBy.AverageDailyDD_We: return OrderBy.Descending;
-                case SortBy.AverageDailyProfitTrades_We: return OrderBy.Ascending;
-                case SortBy.AverageDailyDDTrades_We: return OrderBy.Descending;
-                case SortBy.AverageDailyProfit_Th: return OrderBy.Ascending;
-                case SortBy.AverageDailyDD_Th: return OrderBy.Descending;
-                case SortBy.AverageDailyProfitTrades_Th: return OrderBy.Ascending;
-                case SortBy.AverageDailyDDTrades_Th: return OrderBy.Descending;
-                case SortBy.AverageDailyProfit_Fr: return OrderBy.Ascending;
-                case SortBy.AverageDailyDD_Fr: return OrderBy.Descending;
-                case SortBy.AverageDailyProfitTrades_Fr: return OrderBy.Ascending;
-                case SortBy.AverageDailyDDTrades_Fr: return OrderBy.Descending;
+                case SortBy.Custom: return true;
+                case SortBy.Payoff: return true;
+                case SortBy.ProfitFactor: return true;
+                case SortBy.AverageProfitFactor: return true;
+                case SortBy.RecoveryFactor: return true;
+                case SortBy.AverageRecoveryFactor: return true;
+                case SortBy.PL: return true;
+                case SortBy.DD: return false;
+                case SortBy.AltmanZScore: return false;
+                case SortBy.TotalTrades: return true;
+                case SortBy.Q_90: return false;
+                case SortBy.Q_95: return false;
+                case SortBy.Q_99: return false;
+                case SortBy.Mx: return true;
+                case SortBy.Std: return false;
+                case SortBy.MaxProfit: return true;
+                case SortBy.MaxDD: return false;
+                case SortBy.MaxProfitTotalTrades: return true;
+                case SortBy.MaxDDTotalTrades: return false;
+                case SortBy.MaxProfitConsecutivesTrades: return true;
+                case SortBy.MaxDDConsecutivesTrades: return false;
+                case SortBy.AverageDailyProfit_Mn: return true;
+                case SortBy.AverageDailyDD_Mn: return false;
+                case SortBy.AverageDailyProfitTrades_Mn: return true;
+                case SortBy.AverageDailyDDTrades_Mn: return false;
+                case SortBy.AverageDailyProfit_Tu: return true;
+                case SortBy.AverageDailyDD_Tu: return false;
+                case SortBy.AverageDailyProfitTrades_Tu: return true;
+                case SortBy.AverageDailyDDTrades_Tu: return false;
+                case SortBy.AverageDailyProfit_We: return true;
+                case SortBy.AverageDailyDD_We: return false;
+                case SortBy.AverageDailyProfitTrades_We: return true;
+                case SortBy.AverageDailyDDTrades_We: return false;
+                case SortBy.AverageDailyProfit_Th: return true;
+                case SortBy.AverageDailyDD_Th: return false;
+                case SortBy.AverageDailyProfitTrades_Th: return true;
+                case SortBy.AverageDailyDDTrades_Th: return false;
+                case SortBy.AverageDailyProfit_Fr: return true;
+                case SortBy.AverageDailyDD_Fr: return false;
+                case SortBy.AverageDailyProfitTrades_Fr: return true;
+                case SortBy.AverageDailyDDTrades_Fr: return false;
                 default: throw new ArgumentException($"Unaxpected Sortby variable {sortBy}");
             }
         }
