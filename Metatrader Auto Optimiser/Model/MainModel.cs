@@ -703,7 +703,7 @@ namespace Metatrader_Auto_Optimiser.Model
                     ClearResults();
                     Optimiser.ClearOptimiser();
 
-                    int ind = optimiserInputData.BotParams.FindIndex(x => x.Variable == Fixed_Input_Settings.CloseTerminalFromBot);
+                    int ind = optimiserInputData.BotParams.FindIndex(x => x.Variable == Fixed_Input_Settings.Params[InputParamName.CloseTerminalFromBot]);
                     if (ind > -1)
                     {
                         var item = optimiserInputData.BotParams[ind];

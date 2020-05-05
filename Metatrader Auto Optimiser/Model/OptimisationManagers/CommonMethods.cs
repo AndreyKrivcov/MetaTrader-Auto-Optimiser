@@ -37,7 +37,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers
             config.Tester.OptimizationCriterion = ENUM_OptimisationCriteria.Balance__Profit_factor;
             config.Tester.Period = optimiserInputData.TF;
             config.DeleteKey(ENUM_SectionType.Tester, "Report");
-            if (optimiserInputData.BotParams.Any(x => x.Variable == Fixed_Input_Settings.CloseTerminalFromBot) &&
+            if (optimiserInputData.BotParams.Any(x => x.Variable == Fixed_Input_Settings.Params[InputParamName.CloseTerminalFromBot]) &&
                 optimiserInputData.OptimisationMode != ENUM_OptimisationMode.Disabled)
             {
                 config.Tester.ShutdownTerminal = false;
@@ -131,8 +131,15 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers
         }
     }
 
+    enum InputParamName
+    {
+        CloseTerminalFromBot
+    }
     class Fixed_Input_Settings
     {
-        public static string CloseTerminalFromBot { get; } = "close_terminal_after_finishing_optimisation";
+        public static readonly Dictionary<InputParamName, string> Params = new Dictionary<InputParamName, string>
+        {
+            {InputParamName.CloseTerminalFromBot,  "close_terminal_after_finishing_optimisation"}
+        };
     }
 }

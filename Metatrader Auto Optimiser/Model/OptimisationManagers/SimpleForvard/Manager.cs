@@ -443,7 +443,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.SimpleForvard
 
                 // Конфигурирование терминала перед запуском
                 TerminalManager.Config = GetConfig(optimiserInputData, setFileManager, item);
-                if (optimiserInputData.BotParams.Any(x => x.Variable == Fixed_Input_Settings.CloseTerminalFromBot))
+                if (optimiserInputData.BotParams.Any(x => x.Variable == Fixed_Input_Settings.Params[InputParamName.CloseTerminalFromBot]))
                     TerminalManager.Config.Tester.ShutdownTerminal = false;
                 // Запуск терминала и ожидание завершения его работы
                 if (TerminalManager.Run())
