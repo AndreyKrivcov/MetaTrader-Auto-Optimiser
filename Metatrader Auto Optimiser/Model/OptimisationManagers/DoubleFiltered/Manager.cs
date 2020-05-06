@@ -19,129 +19,33 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered
         }
     }
 
-    class Manager : IOptimiser
+    class Manager : ManagerBase
     {
-        public Manager(string name)
+        public Manager(string name) : base(name)
         {
-            Name = name;
             SubFormKeeper = new View_Model.SubFormKeeper(() => { return new Settings(); });
         }
         ~Manager() { SubFormKeeper.Close(); }
 
-        #region Terminal manager
-        /// <summary>
-        /// Хранитель терминалла
-        /// </summary>
-        private TerminalManager _terminal = null;
-        /// <summary>
-        /// Геттер / Сеттер для добавления терминалла в оптимизатор
-        /// </summary>
-        public TerminalManager TerminalManager
-        {
-            get => _terminal;
-            set
-            {
-                // Если добавляентя null - не чего не делаем
-                if (value == null)
-                    return;
-                // Если сейчас оптимизация в процессе - то останавливаем ее перед добавлением нового терминала
-                if (IsOptimisationInProcess)
-                    Stop();
-
-                // Если заданный ранее терминалл открыт - закрываем его перед заменой параметра
-                if (_terminal != null && _terminal.IsActive)
-                {
-                    _terminal.Close();
-                    _terminal.WaitForStop();
-                }
-                // ЗАменяем параметр
-                _terminal = value;
-            }
-        }
-        #endregion
-
         private readonly WorkingDirectory workingDirectory = new WorkingDirectory();
-
-        public bool IsOptimisationInProcess { get; protected set; } = false;
-
-        public string Name { get; }
-
-        #region Report getters
-        /// <summary>
-        /// Отчет оптимизаций для всех указанных исторических временных промежутков
-        /// </summary>
-        public List<OptimisationResult> AllOptimisationResults { get; } = new List<OptimisationResult>();
-        /// <summary>
-        /// Форвард тесты
-        /// </summary>
-        public List<OptimisationResult> ForwardOptimisations { get; } = new List<OptimisationResult>();
-        /// <summary>
-        /// Исторические тесты
-        /// </summary>
-        public List<OptimisationResult> HistoryOptimisations { get; } = new List<OptimisationResult>();
-        /// <summary>
-        /// Валюта
-        /// </summary>
-        public string Currency { get; protected set; } = null;
-        /// <summary>
-        /// Баланс
-        /// </summary>
-        public double Balance { get; protected set; }
-        /// <summary>
-        /// Кредитное плечо
-        /// </summary>
-        public int Laverage { get; protected set; }
-        /// <summary>
-        /// Путь к роботу относительно директории с экспертами
-        /// </summary>
-        public string PathToBot { get; protected set; } = null;
-        /// <summary>
-        /// Путь к рабочей директории с изменяемыми файтами
-        /// </summary>
-        public string OptimiserWorkingDirectory { get; protected set; } = null;
-        #endregion
-
-        public event Action<IOptimiser> OptimisationProcessFinished;
-        public event Action<string, double> ProcessStatus;
-
-        /// <summary>
-        /// Отчистка менеджера оптимизаций
-        /// </summary>
-        public virtual void ClearOptimiser()
-        {
-            if (TerminalManager.IsActive || IsOptimisationInProcess)
-            {
-                throw new Exception("Can`t clear optimiser becouse of terminal is active or optimisation is in process");
-            }
-
-            AllOptimisationResults.Clear();
-            ForwardOptimisations.Clear();
-            HistoryOptimisations.Clear();
-
-            Currency = null;
-            PathToBot = null;
-            OptimiserWorkingDirectory = null;
-            Balance = 0;
-            Laverage = 0;
-        }
 
         #region Subwindow
 
         private readonly View_Model.SubFormKeeper SubFormKeeper;
         private readonly Settings_M Settings = Settings_M.Instance();
 
-        public void LoadSettingsWindow()
+        public override void LoadSettingsWindow()
         {
             SubFormKeeper.Open();
         }
 
         #endregion
-        public void Start(OptimiserInputData optimiserInputData, string PathToResultsFile, string dirPrefix)
+        public override void Start(OptimiserInputData optimiserInputData, string PathToResultsFile, string dirPrefix)
         {
             if (IsOptimisationInProcess || TerminalManager.IsActive)
                 throw new Exception("Optimisation already in process or terminal is busy");
             // Устанавливает статус оптимизации и переключатель
-            ProcessStatus("Start optimisation", 0);
+            OnProcessStatus("Start optimisation", 0);
             IsOptimisationInProcess = true;
 
             // Проверить доступность папки к результатом оптимизации
@@ -206,7 +110,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered
                     return;
 
                 // Обновляем прогресс бар
-                ProcessStatus("Optimisation", step * i++);
+                OnProcessStatus("Optimisation", step * i++);
 
                 configFile.Tester.FromDate = item.From;
                 configFile.Tester.ToDate = item.Till;
@@ -238,7 +142,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered
             // Счетчик итераций прогресс бара
             i = 1;
             // Обновляем прогресс бар
-            ProcessStatus("Tests", 0);
+            OnProcessStatus("Tests", 0);
 
             configFile.Tester.Optimization = ENUM_OptimisationMode.Disabled;
             configFile.Tester.ShutdownTerminal = true;
@@ -251,7 +155,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered
                     return;
 
                 // Обновляем прогресс бар
-                ProcessStatus("Tests", step * i++);
+                OnProcessStatus("Tests", step * i++);
 
                 Test(item.Key, item.Value.Key, item.Value.Value, configFile, PathToResultsFile);
             }
@@ -261,7 +165,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered
 
             // Переключение статуса оптимизаций на завершенный и вызов соответствующего события
             IsOptimisationInProcess = false;
-            OptimisationProcessFinished(this);
+            OnOptimisationProcessFinished(this);
         }
 
         private KeyValuePair<DateBorders, IEnumerable<ParamsItem>>? FilterResults(List<OptimisationResult> results,
@@ -326,25 +230,7 @@ namespace Metatrader_Auto_Optimiser.Model.OptimisationManagers.DoubleFiltered
             tester(ForwardOptimisations, border_forward);
         }
 
-        /// <summary>
-        /// Остановка текущего процесса оптимизации и отчистка оптимизатора
-        /// </summary>
-        public virtual void Stop()
-        {
-            ProcessStatus("Stoped", 100);
-
-            if (TerminalManager.IsActive)
-            {
-                TerminalManager.Close();
-                TerminalManager.WaitForStop();
-            }
-
-            IsOptimisationInProcess = false;
-            ClearOptimiser();
-            OptimisationProcessFinished(this);
-        }
-
-        public void CloseSettingsWindow()
+        public override void CloseSettingsWindow()
         {
             SubFormKeeper.Close();
         }
