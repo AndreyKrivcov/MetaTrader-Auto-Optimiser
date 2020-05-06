@@ -43,6 +43,10 @@
                         Margin="2,0,0,0"
                         Command="{Binding ClearLoadedResults}"
                         IsEnabled="{Binding EnableMainTogles, UpdateSourceTrigger=PropertyChanged}"/>
+                <Button Content="Load bot params"
+                        Margin="2,0,0,0"
+                        Command="{Binding LoadBotParamsFromSelectedPass}"
+                        IsEnabled="{Binding EnableMainTogles, UpdateSourceTrigger=PropertyChanged}"/>
             </WrapPanel>
 
             <WrapPanel HorizontalAlignment="Right" 

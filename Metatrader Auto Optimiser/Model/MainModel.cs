@@ -9,6 +9,7 @@ using Metatrader_Auto_Optimiser.Model.DirectoryManagers;
 using Metatrader_Auto_Optimiser.Model.FileReaders;
 using Metatrader_Auto_Optimiser.Model.OptimisationManagers;
 using Metatrader_Auto_Optimiser.Model.Terminal;
+using Metatrader_Auto_Optimiser.View_Model;
 using ReportManager;
 
 namespace Metatrader_Auto_Optimiser.Model
@@ -175,7 +176,7 @@ namespace Metatrader_Auto_Optimiser.Model
             // Создаем пустую запись оптимизации - нужна для того что бы что то бы созранить что то в файл
             var emptyItem = new OptimisationResult
             {
-                report = new ReportItem
+                report = new ReportManager.ReportItem
                 {
                     BotParams = new Dictionary<string, string>(),
                     DateBorders = new DateBorders(DTExtention.UnixEpoch, DTExtention.UnixEpoch.AddDays(1)),
@@ -710,9 +711,18 @@ namespace Metatrader_Auto_Optimiser.Model
                         item.Value = "true";
                         optimiserInputData.BotParams[ind] = item;
                     }
+                    var botParams = optimiserInputData.BotParams.ToList(); // clone expert settings
+
                     Optimiser.Start(optimiserInputData,
                         Path.Combine(terminalDirectory.Common.FullName,
                         $"{Path.GetFileNameWithoutExtension(optimiserInputData.RelativePathToBot)}_Report.xml"), dirPrefix);
+
+                    SetFileManager fileManager = new SetFileManager(
+                        Path.Combine(workingDirectory.GetOptimisationDirectory(optimiserInputData.Symb,
+                                                                               Path.GetFileNameWithoutExtension(optimiserInputData.RelativePathToBot),
+                                                                               dirPrefix,Optimiser.Name).FullName, "OptimisationSettings.set"), true);
+                    fileManager.Params = botParams;
+                    fileManager.SaveParams();
                 }
                 catch (Exception e)
                 {
@@ -990,6 +1000,27 @@ namespace Metatrader_Auto_Optimiser.Model
                     ThrowException(e.Message);
                 }
             }
+        }
+
+        public IEnumerable<ParamsItem> GetBotParamsFromOptimisationPass(string botName, string optimisationName)
+        {
+            var files = workingDirectory.Reports.GetDirectory(optimisationName)?.GetFiles();
+            if (!files.Any(x => x.Name == "Forward.xml"))
+                throw new Exception("Can`t find file named 'Forward.xml'");
+            var forwardOptimisations = files.First(x => x.Name == "Forward.xml");
+            if (!files.Any(x => x.Name == "OptimisationSettings.set"))
+                throw new Exception("Can`t find 'OptimisationSettings.set' file");
+            var setFile = files.First(x => x.Name == "OptimisationSettings.set");
+
+            using (ReportReader reader = new ReportReader(forwardOptimisations.FullName))
+            {
+                if (reader.RelativePathToBot != botName)
+                    throw new Exception($"Expected {reader.RelativePathToBot} expert, but selected {botName}");
+            }
+
+            SetFileManager setFileReader = new SetFileManager(setFile.FullName, false);
+
+            return setFileReader.Params;
         }
         #endregion
     }

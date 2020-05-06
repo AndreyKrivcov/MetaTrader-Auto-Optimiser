@@ -100,7 +100,7 @@ namespace Metatrader_Auto_Optimiser.Model
         /// <param name="isUpdate">Признак нужно ли обновлять файл с параметрами перед его чтением</param>
         /// <returns>Список параметров</returns>
         IEnumerable<ParamsItem> GetBotParams(string botName, bool isUpdate);
-        /// <summary>
+        IEnumerable<ParamsItem> GetBotParamsFromOptimisationPass(string botName, string optimisationName);
         /// Созранение в (*.csv) файл выбранных оптимизаций
         /// </summary>
         /// <param name="pathToSavingFile">Путь к созраняемому файлу</param>

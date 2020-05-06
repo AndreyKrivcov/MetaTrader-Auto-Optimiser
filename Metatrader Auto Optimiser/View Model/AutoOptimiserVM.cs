@@ -134,6 +134,10 @@ namespace Metatrader_Auto_Optimiser.View_Model
                     SetBotParams(OptimiserSettings.First(x => x.Name == "Available experts").SelectedParam, true);
                 });
             });
+            LoadBotParamsFromSelectedPass = new RelayCommand((object o) =>
+            {
+                SetBotParams();
+            });
             // Коллбек нажатия на кнопку созранения или же напротив загрузки файла с результатами выбора форвардных и исторических диаппазонов
             SaveOrLoadDates = new RelayCommand(_SaveOrLoadDates);
 
@@ -355,7 +359,6 @@ namespace Metatrader_Auto_Optimiser.View_Model
             dispatcher.Invoke(() =>
             {
                 BotParams.Clear();
-                OnPropertyChanged("BotParams");
                 Status = "Update bot params";
                 OnPropertyChanged("Status");
                 Progress = 100;
@@ -374,18 +377,50 @@ namespace Metatrader_Auto_Optimiser.View_Model
                     }
                 }
 
-                OnPropertyChanged("BotParams");
                 Status = null;
                 OnPropertyChanged("Status");
                 Progress = 0;
                 OnPropertyChanged("Progress");
             });
         }
+        private void SetBotParams()
+        {
+            if (string.IsNullOrEmpty(SelectedOptimisation))
+                return;
+
+            try
+            {
+                Status = "Filling bot params";
+                OnPropertyChanged("Status");
+                Progress = 100;
+                OnPropertyChanged("Progress");
+
+                var botParams = model.GetBotParamsFromOptimisationPass(OptimiserSettings.First(x => x.Name == "Available experts").SelectedParam,
+                                                                       SelectedOptimisation);
+                for (int i = 0; i < BotParams.Count; i++)
+                {
+                    if (!botParams.Any(x => x.Variable == BotParams[i].Vriable))
+                        continue;
+
+                    BotParams[i] = new BotParamsData(botParams.First(x => x.Variable == BotParams[i].Vriable));
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+
+            Status = null;
+            OnPropertyChanged("Status");
+            Progress = 0;
+            OnPropertyChanged("Progress");
+        }
         /// <summary>
         /// Настройки оптимизатора
         /// </summary>
         public List<OptimiserSetting> OptimiserSettings { get; }
         public ICommand UpdateSetFile { get; }
+        public ICommand LoadBotParamsFromSelectedPass { get; }
         /// <summary>
         /// Имя актива выбранного для тестов / оптимизации
         /// </summary>
