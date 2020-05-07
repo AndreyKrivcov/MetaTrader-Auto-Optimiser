@@ -3,6 +3,7 @@ using System.Xml;
 using System.IO;
 using System;
 using System.Threading;
+using System.Linq;
 
 namespace ReportManager
 {
@@ -157,6 +158,16 @@ namespace ReportManager
         /// временный хранитель (накопитель) данных
         /// </summary>
         private static ReportItem ReportItem;
+        private static List<OptimisationResult> ReportData = new List<OptimisationResult>();
+        public static void AppendToReportData(string symbol, int tf,
+                                              ulong StartDT, ulong FinishDT)
+        {
+            ReportItem.Symbol = symbol;
+            ReportItem.TF = tf;
+            ReportItem.DateBorders = new DateBorders(StartDT.UnixDTToDT(), FinishDT.UnixDTToDT());
+
+            ReportData.Add(ReportItem);
+        }
         /// <summary>
         /// отчистка временного зранителя данных
         /// </summary>
@@ -164,6 +175,7 @@ namespace ReportManager
         {
             ReportItem = new ReportItem();
         }
+        public static void ClearReportData() { ReportData.Clear(); }
         public static void SetReportItem(ReportItem item) { ReportItem = item; }
         /// <summary>
         /// Добавление параметра робота
@@ -479,9 +491,25 @@ namespace ReportManager
             }
             catch (Exception e)
             {
+                ClearReportItem();
                 return e.Message;
             }
 
+            return "";
+        }
+        public static string WriteReportData(string pathToBot, string currency, double balance,
+                                             int laverage, string pathToFile)
+        {
+            try
+            {
+                ReportData.ReportWriter(pathToBot, currency, balance, laverage, pathToFile);
+                ClearReportData();
+            }
+            catch (Exception e)
+            {
+                return e.Message;
+            }
+            ClearReportData();
             return "";
         }
         /// <summary>
