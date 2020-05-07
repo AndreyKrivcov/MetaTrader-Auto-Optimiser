@@ -167,6 +167,7 @@ namespace ReportManager
             ReportItem.DateBorders = new DateBorders(StartDT.UnixDTToDT(), FinishDT.UnixDTToDT());
 
             ReportData.Add(ReportItem);
+            ClearReportItem();
         }
         /// <summary>
         /// отчистка временного зранителя данных
