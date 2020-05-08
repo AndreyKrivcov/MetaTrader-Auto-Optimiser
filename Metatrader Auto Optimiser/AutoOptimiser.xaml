@@ -145,7 +145,8 @@
                                     <RowDefinition Height="50"/>
                                 </Grid.RowDefinitions>
 
-                                <ListView ItemsSource="{Binding AssetCollection}">
+                                <ListView ItemsSource="{Binding AssetCollection}"
+                                          IsEnabled="{Binding EnableMainTogles, UpdateSourceTrigger=PropertyChanged}">
                                     <ListView.View>
                                         <GridView>
                                             <GridViewColumn Header="Asset"
@@ -173,7 +174,8 @@
                                             Text="{Binding AssetName}"/>
                                     </WrapPanel>
                                     <Button Content="Add to collection"
-                                            Command="{Binding AddAsset}"/>
+                                            Command="{Binding AddAsset}"
+                                            IsEnabled="{Binding EnableMainTogles, UpdateSourceTrigger=PropertyChanged}"/>
                                 </StackPanel>
                             </Grid>
                         </Grid>
