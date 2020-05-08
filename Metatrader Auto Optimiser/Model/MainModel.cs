@@ -677,15 +677,8 @@ namespace Metatrader_Auto_Optimiser.Model
 
                     bool doWhile()
                     {
-                        if (assets.Count == 0)
+                        if (assets.Count == 0 || StopOptimisationTougle)
                             return false;
-                        if(StopOptimisationTougle)
-                        {
-                            LoadingOptimisationTougle = true;
-                            OnPropertyChanged("ResumeEnablingTogle");
-
-                            return false;
-                        }
 
                         optimiserInputData.Symb = assets.First();
                         LoadingOptimisationTougle = assets.Count == 1;
@@ -696,7 +689,10 @@ namespace Metatrader_Auto_Optimiser.Model
                     }
 
                     while (doWhile())
-                        StartOptimisation(optimiserInputData, isAppend, dirPrefix);
+                    {
+                        var data = optimiserInputData; // Copy input data
+                        StartOptimisation(data, isAppend, dirPrefix);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -760,7 +756,7 @@ namespace Metatrader_Auto_Optimiser.Model
                     item.Value = "true";
                     optimiserInputData.BotParams[ind] = item;
                 }
-                var botParams = optimiserInputData.BotParams.ToList(); // clone expert settings
+                var botParams = optimiserInputData.BotParams.ToList(); // Copy expert settings
 
                 Optimiser.Start(optimiserInputData,
                     Path.Combine(terminalDirectory.Common.FullName,
@@ -941,6 +937,8 @@ namespace Metatrader_Auto_Optimiser.Model
         public void StopOptimisation()
         {
             StopOptimisationTougle = true;
+            LoadingOptimisationTougle = true;
+
             Optimiser.Stop();
         }
 
