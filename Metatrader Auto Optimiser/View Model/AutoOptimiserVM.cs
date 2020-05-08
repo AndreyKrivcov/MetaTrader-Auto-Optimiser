@@ -134,6 +134,16 @@ namespace Metatrader_Auto_Optimiser.View_Model
                     SetBotParams(OptimiserSettings.First(x => x.Name == "Available experts").SelectedParam, true);
                 });
             });
+            AddAsset = new RelayCommand((object o) =>
+            {
+                if (string.IsNullOrEmpty(AssetName) || string.IsNullOrWhiteSpace(AssetName) ||
+                    AssetCollection.Any(x => x.Asset == AssetName))
+                {
+                    return;
+                }
+
+                AssetCollection.Add(new AssetItem(AssetName, DeleteAsset));
+            });
             LoadBotParamsFromSelectedPass = new RelayCommand((object o) =>
             {
                 SetBotParams();
@@ -295,18 +305,21 @@ namespace Metatrader_Auto_Optimiser.View_Model
         /// </summary>
         private void Model_OptimisationStoped()
         {
-            EnableMainTogles = true;
+            if (model.LoadingOptimisationTougle)
+                EnableMainTogles = true;
             Status = null;
             Progress = 0;
             dispatcher.Invoke(() =>
             {
                 OnPropertyChanged("SelectedOptimisationNames");
-                OnPropertyChanged("EnableMainTogles");
+                if (model.LoadingOptimisationTougle)
+                    OnPropertyChanged("EnableMainTogles");
                 OnPropertyChanged("Status");
                 OnPropertyChanged("Progress");
             });
 
-            System.Windows.MessageBox.Show("Optimisation finished");
+            if (model.LoadingOptimisationTougle)
+                MessageBox.Show("Optimisation finished");
         }
 
         #endregion
@@ -425,6 +438,13 @@ namespace Metatrader_Auto_Optimiser.View_Model
         /// Имя актива выбранного для тестов / оптимизации
         /// </summary>
         public string AssetName { get; set; }
+        public ObservableCollection<AssetItem> AssetCollection { get; } = new ObservableCollection<AssetItem>();
+        private void DeleteAsset(AssetItem item)
+        {
+            AssetCollection.Remove(item);
+        }
+
+        public ICommand AddAsset { get; }
         #endregion
 
         #region Sorter ans Filter in Settings
@@ -588,7 +608,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
                     Model = GetEnum<ENUM_Model>(OptimiserSettings.Find(x => x.Name == "Optimisation model").SelectedParam),
                     OptimisationMode = GetEnum<ENUM_OptimisationMode>(OptimiserSettings.Find(x => x.Name == "Optimisation mode").SelectedParam),
                     RelativePathToBot = OptimiserSettings.Find(x => x.Name == "Available experts").SelectedParam,
-                    Symb = AssetName,
+
                     TF = GetEnum<ENUM_Timeframes>(OptimiserSettings.Find(x => x.Name == "TF").SelectedParam),
                     HistoryBorders = (DateBorders.Any(x => x.BorderType == OptimisationType.History) ?
                                     DateBorders.Where(x => x.BorderType == OptimisationType.History)
@@ -601,7 +621,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
                     SortingFlags = SorterItems.Select(x => x.Sorter)
                 };
 
-                model.StartOptimisation(optimiserInputData, FileWritingMode == "Append", DirPrefix);
+                model.StartOptimisation(optimiserInputData, FileWritingMode == "Append", DirPrefix, AssetCollection.Select(x => x.Asset).ToList());
             }
         }
         /// <summary>
@@ -1209,6 +1229,17 @@ namespace Metatrader_Auto_Optimiser.View_Model
     }
 
     #region Entities for GUI
+    class AssetItem
+    {
+        public AssetItem(string asset, Action<AssetItem> delete)
+        {
+            Asset = asset;
+            Delete = new RelayCommand((object o) => delete(this));
+        }
+        public string Asset { get; }
+
+        public ICommand Delete { get; }
+    }
     class SubFormKeeper
     {
         public SubFormKeeper(Func<Window> createWindow, Action<Window> subscribe_events = null, Action<Window> unSubscribe_events = null)

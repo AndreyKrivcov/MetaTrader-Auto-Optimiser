@@ -14,6 +14,7 @@ namespace Metatrader_Auto_Optimiser.Model
     interface IMainModel : INotifyPropertyChanged
     {
         #region Getters
+        bool LoadingOptimisationTougle { get; }
         /// <summary>
         /// Выбранный оптимизатор
         /// </summary>
@@ -88,7 +89,7 @@ namespace Metatrader_Auto_Optimiser.Model
         /// <param name="optimiserInputData">Взодные данные для запуска оптимизаций</param>
         /// <param name="IsAppend">Признак дополнить ли существующие выгрузки (если существуют) или же перезаписать их</param>
         /// <param name="dirPrefix">Префикс директории с оптимизациями</param>
-        void StartOptimisation(OptimiserInputData optimiserInputData, bool IsAppend, string dirPrefix);
+        void StartOptimisation(OptimiserInputData optimiserInputData, bool IsAppend, string dirPrefix, List<string> assets);
         /// <summary>
         /// Остановка оптимизации извне (пользователем)
         /// </summary>

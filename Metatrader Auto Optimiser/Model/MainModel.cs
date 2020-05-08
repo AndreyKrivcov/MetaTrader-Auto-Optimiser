@@ -77,7 +77,8 @@ namespace Metatrader_Auto_Optimiser.Model
                      });
 
             SaveOptimisations(optimiser);
-            LoadSavedOptimisation(optimiser.OptimiserWorkingDirectory);
+            if (LoadingOptimisationTougle)
+                LoadSavedOptimisation(optimiser.OptimiserWorkingDirectory);
             OptimisationStoped();
             Optimiser.ClearOptimiser();
         }
@@ -652,13 +653,64 @@ namespace Metatrader_Auto_Optimiser.Model
         /// <param name="optimiserInputData">Входные данные для оптимизатора</param>
         /// <param name="isAppend">Флаг - нужно ли дополнять файл ?</param>
         /// <param name="dirPrefix">Префикс директории</param>
-        public async void StartOptimisation(OptimiserInputData optimiserInputData, bool isAppend, string dirPrefix)
+        public async void StartOptimisation(OptimiserInputData optimiserInputData, bool isAppend, string dirPrefix, List<string> assets)
         {
-            if (string.IsNullOrEmpty(optimiserInputData.Symb) ||
-                string.IsNullOrWhiteSpace(optimiserInputData.Symb) ||
-                (optimiserInputData.HistoryBorders.Count == 0 && optimiserInputData.ForwardBorders.Count == 0))
+
+            if (assets.Count == 0)
             {
-                ThrowException("Fill in asset name and date borders");
+                ThrowException("Fill in asset name");
+                OnPropertyChanged("ResumeEnablingTogle");
+                return;
+            }
+
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    if (optimiserInputData.OptimisationMode == ENUM_OptimisationMode.Disabled &&
+                       assets.Count > 1)
+                    {
+                        throw new Exception("For test there mast be selected only one asset");
+                    }
+                    StopOptimisationTougle = false;
+
+                    bool doWhile()
+                    {
+                        if (assets.Count == 0)
+                            return false;
+                        if(StopOptimisationTougle)
+                        {
+                            LoadingOptimisationTougle = true;
+                            OnPropertyChanged("ResumeEnablingTogle");
+
+                            return false;
+                        }
+
+                        optimiserInputData.Symb = assets.First();
+                        LoadingOptimisationTougle = assets.Count == 1;
+
+                        assets.Remove(assets.First());
+
+                        return true;
+                    }
+
+                    while (doWhile())
+                        StartOptimisation(optimiserInputData, isAppend, dirPrefix);
+                }
+                catch (Exception e)
+                {
+                    LoadingOptimisationTougle = true;
+                    OnPropertyChanged("ResumeEnablingTogle");
+                    ThrowException?.Invoke(e.Message);
+                }
+            });
+        }
+        private void StartOptimisation(OptimiserInputData optimiserInputData, bool isAppend, string dirPrefix)
+        {
+            if ((optimiserInputData.HistoryBorders.Count == 0 && optimiserInputData.ForwardBorders.Count == 0))
+            {
+                ThrowException("Fill in date borders");
                 OnPropertyChanged("ResumeEnablingTogle");
                 return;
             }
@@ -688,49 +740,50 @@ namespace Metatrader_Auto_Optimiser.Model
 
             Optimiser.CloseSettingsWindow();
 
-            await Task.Run(() =>
+            try
             {
-                try
+                DirectoryInfo cachDir = Optimiser.TerminalManager.TerminalChangeableDirectory
+                                                         .GetDirectory("Tester")
+                                                         .GetDirectory("cache", true);
+                DirectoryInfo cacheCopy = workingDirectory.Tester.GetDirectory("cache", true);
+                cacheCopy.GetFiles().ToList().ForEach(x => x.Delete());
+                cachDir.GetFiles().ToList()
+                       .ForEach(x => x.MoveTo(Path.Combine(cacheCopy.FullName, x.Name)));
+
+                ClearResults();
+                Optimiser.ClearOptimiser();
+
+                int ind = optimiserInputData.BotParams.FindIndex(x => x.Variable == Fixed_Input_Settings.Params[InputParamName.CloseTerminalFromBot]);
+                if (ind > -1)
                 {
-
-                    DirectoryInfo cachDir = Optimiser.TerminalManager.TerminalChangeableDirectory
-                                                             .GetDirectory("Tester")
-                                                             .GetDirectory("cache", true);
-                    DirectoryInfo cacheCopy = workingDirectory.Tester.GetDirectory("cache", true);
-                    cacheCopy.GetFiles().ToList().ForEach(x => x.Delete());
-                    cachDir.GetFiles().ToList()
-                           .ForEach(x => x.MoveTo(Path.Combine(cacheCopy.FullName, x.Name)));
-
-                    ClearResults();
-                    Optimiser.ClearOptimiser();
-
-                    int ind = optimiserInputData.BotParams.FindIndex(x => x.Variable == Fixed_Input_Settings.Params[InputParamName.CloseTerminalFromBot]);
-                    if (ind > -1)
-                    {
-                        var item = optimiserInputData.BotParams[ind];
-                        item.Value = "true";
-                        optimiserInputData.BotParams[ind] = item;
-                    }
-                    var botParams = optimiserInputData.BotParams.ToList(); // clone expert settings
-
-                    Optimiser.Start(optimiserInputData,
-                        Path.Combine(terminalDirectory.Common.FullName,
-                        $"{Path.GetFileNameWithoutExtension(optimiserInputData.RelativePathToBot)}_Report.xml"), dirPrefix);
-
-                    SetFileManager fileManager = new SetFileManager(
-                        Path.Combine(workingDirectory.GetOptimisationDirectory(optimiserInputData.Symb,
-                                                                               Path.GetFileNameWithoutExtension(optimiserInputData.RelativePathToBot),
-                                                                               dirPrefix,Optimiser.Name).FullName, "OptimisationSettings.set"), true);
-                    fileManager.Params = botParams;
-                    fileManager.SaveParams();
+                    var item = optimiserInputData.BotParams[ind];
+                    item.Value = "true";
+                    optimiserInputData.BotParams[ind] = item;
                 }
-                catch (Exception e)
+                var botParams = optimiserInputData.BotParams.ToList(); // clone expert settings
+
+                Optimiser.Start(optimiserInputData,
+                    Path.Combine(terminalDirectory.Common.FullName,
+                    $"{Path.GetFileNameWithoutExtension(optimiserInputData.RelativePathToBot)}_Report.xml"), dirPrefix);
+
+                SetFileManager fileManager = new SetFileManager(
+                    Path.Combine(workingDirectory.GetOptimisationDirectory(optimiserInputData.Symb,
+                                                                           Path.GetFileNameWithoutExtension(optimiserInputData.RelativePathToBot),
+                                                                           dirPrefix, Optimiser.Name).FullName, "OptimisationSettings.set"), true)
                 {
-                    Optimiser.Stop();
-                    ThrowException(e.Message);
-                }
-            });
+                    Params = botParams
+                };
+                fileManager.SaveParams();
+
+                Optimiser.TerminalManager.WaitForStop();
+            }
+            catch (Exception e)
+            {
+                Optimiser.Stop();
+                throw e;
+            }
         }
+        public bool LoadingOptimisationTougle { get; private set; } = true;
         /// <summary>
         /// Запуск тестов
         /// </summary>
@@ -887,8 +940,12 @@ namespace Metatrader_Auto_Optimiser.Model
         /// </summary>
         public void StopOptimisation()
         {
+            StopOptimisationTougle = true;
             Optimiser.Stop();
         }
+
+        bool StopOptimisationTougle = false;
+
         /// <summary>
         /// Сортируем загруженный отчет
         /// </summary>
