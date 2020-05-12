@@ -940,6 +940,10 @@ namespace Metatrader_Auto_Optimiser.Model
             LoadingOptimisationTougle = true;
 
             Optimiser.Stop();
+
+            var processes = System.Diagnostics.Process.GetProcesses().Where(x=>x.ProcessName == "metatester64");
+            foreach (var item in processes)
+                item.Kill();
         }
 
         bool StopOptimisationTougle = false;
