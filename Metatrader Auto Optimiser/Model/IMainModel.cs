@@ -61,6 +61,7 @@ namespace Metatrader_Auto_Optimiser.Model
         #endregion
 
         #region Methods
+        void SaveBotParams(IEnumerable<KeyValuePair<string, string>> data, string path);
         /// <summary>
         /// Отчистить результаты оптимизаций загруженные в память
         /// </summary>

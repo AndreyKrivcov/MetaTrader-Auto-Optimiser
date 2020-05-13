@@ -754,6 +754,7 @@ namespace Metatrader_Auto_Optimiser.Model
                 {
                     var item = optimiserInputData.BotParams[ind];
                     item.Value = "true";
+                    item.IsOptimize = false;
                     optimiserInputData.BotParams[ind] = item;
                 }
                 var botParams = optimiserInputData.BotParams.ToList(); // Copy expert settings
@@ -941,7 +942,7 @@ namespace Metatrader_Auto_Optimiser.Model
 
             Optimiser.Stop();
 
-            var processes = System.Diagnostics.Process.GetProcesses().Where(x=>x.ProcessName == "metatester64");
+            var processes = System.Diagnostics.Process.GetProcesses().Where(x => x.ProcessName == "metatester64");
             foreach (var item in processes)
                 item.Kill();
         }
@@ -1080,6 +1081,16 @@ namespace Metatrader_Auto_Optimiser.Model
             SetFileManager setFileReader = new SetFileManager(setFile.FullName, false);
 
             return setFileReader.Params;
+        }
+
+        public void SaveBotParams(IEnumerable<KeyValuePair<string, string>> data, string path)
+        {
+            SetFileManager setFileManager = new SetFileManager(path, true)
+            {
+                Params = data.Select(x => new ParamsItem { Variable = x.Key, Value = x.Value }).ToList()
+            };
+
+            setFileManager.SaveParams();
         }
         #endregion
     }

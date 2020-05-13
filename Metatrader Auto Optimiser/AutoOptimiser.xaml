@@ -164,7 +164,7 @@
                                         </GridView>
                                     </ListView.View>
                                 </ListView>
-                                
+
                                 <StackPanel Grid.Row="1">
                                     <WrapPanel>
                                         <Label Content="Asset name:"/>
@@ -820,18 +820,29 @@
                         <TabControl Grid.Column="1"
                                     TabStripPlacement="Bottom">
                             <TabItem Header="Bot params">
-                                <ListView ItemsSource="{Binding SelectedBotParams}">
-                                    <ListView.View>
-                                        <GridView>
-                                            <GridViewColumn Header="Name"
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition Height="20"/>
+                                    </Grid.RowDefinitions>
+
+                                    <ListView ItemsSource="{Binding SelectedBotParams}">
+                                        <ListView.View>
+                                            <GridView>
+                                                <GridViewColumn Header="Name"
                                                             Width="200"
                                                             DisplayMemberBinding="{Binding Key}"/>
-                                            <GridViewColumn Header="Value"
+                                                <GridViewColumn Header="Value"
                                                             Width="100"
                                                             DisplayMemberBinding="{Binding Value}"/>
-                                        </GridView>
-                                    </ListView.View>
-                                </ListView>
+                                            </GridView>
+                                        </ListView.View>
+                                    </ListView>
+
+                                    <Button Content="Generate (*.set) file"
+                                            Grid.Row="1"
+                                            Command="{Binding GenerateSetFile }"/>
+                                </Grid>
                             </TabItem>
                             <TabItem Header="Daily PL">
                                 <ListView ItemsSource="{Binding TradingDays}">

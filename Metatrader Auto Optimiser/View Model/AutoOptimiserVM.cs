@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Input;
 
 using Metatrader_Auto_Optimiser.View;
+using System.IO;
 
 namespace Metatrader_Auto_Optimiser.View_Model
 {
@@ -165,6 +166,7 @@ namespace Metatrader_Auto_Optimiser.View_Model
 
             // Коллбек нажатия кнопки отчистки результатов оптимизации из памяти
             ClearLoadedResults = new RelayCommand((object o) => { model.ClearResults(); });
+            GenerateSetFile = new RelayCommand(_GenerateSetFile);
             #endregion
         }
 
@@ -1008,11 +1010,27 @@ namespace Metatrader_Auto_Optimiser.View_Model
             MaxPLDD[1] = GetItem(MaxPLDD[1].Key);
             MaxPLDD[2] = GetItem(MaxPLDD[2].Key);
         }
+        #region Bot params
         /// <summary>
         /// Хранитель параметров робота
         /// </summary>
         public ObservableCollection<KeyValuePair<string, string>> SelectedBotParams { get; } =
             new ObservableCollection<KeyValuePair<string, string>>();
+        public ICommand GenerateSetFile { get; }
+        private void _GenerateSetFile(object o)
+        {
+            using (System.Windows.Forms.SaveFileDialog sfd = new System.Windows.Forms.SaveFileDialog())
+            {
+                sfd.RestoreDirectory = true;
+
+                if (sfd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    model.SaveBotParams(SelectedBotParams,
+                                        Path.Combine(Path.GetDirectoryName(sfd.FileName), $"{Path.GetFileNameWithoutExtension(sfd.FileName)}.set"));
+                }
+            }
+        }
+        #endregion
         /// <summary>
         /// Хранитель PL по дням
         /// </summary>
